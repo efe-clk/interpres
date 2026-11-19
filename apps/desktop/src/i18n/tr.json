@@ -94,7 +94,6 @@
     "target": "Hedef dil",
     "engine": "Motor",
     "glossary": "Sözlük",
-    "noGlossary": "Sözlük yok",
     "file": "Dosya",
     "state": "Durum",
     "reveal": "Klasörde göster",
@@ -110,7 +109,9 @@
       "cancelled": "İptal edildi"
     },
     "add": "Dosya ekle",
-    "cancel": "İptal et"
+    "cancel": "İptal et",
+    "useGlossary": "Sözlüğü uygula",
+    "source": "Kaynak dil"
   },
   "glossary": {
     "pair": "Dil çifti",
@@ -124,8 +125,10 @@
     "emptyHint": "Terim ekleyin veya CSV içe aktarın.",
     "noResults": "Sonuç yok",
     "imported": "{{count}} terim içe aktarıldı",
-    "exported": "CSV panoya kopyalandı",
-    "csvFormat": "Her satır: kaynak,hedef"
+    "exported": "{{count}} terim dışa aktarıldı",
+    "pairs": "Sözlükler",
+    "sourceNeeded": "Sözlük için kaynak dili seçin",
+    "active": "Sözlük: {{count}} terim"
   },
   "history": {
     "search": "Geçmişte ara",

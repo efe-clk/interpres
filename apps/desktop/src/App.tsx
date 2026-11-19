@@ -44,10 +44,10 @@ function Shell() {
           <DocumentsScreen active={screen === 'documents'} />
         </div>
         <div className={pane('glossary')}>
-          <GlossaryScreen />
+          <GlossaryScreen active={screen === 'glossary'} />
         </div>
         <div className={pane('history')}>
-          <HistoryScreen />
+          <HistoryScreen active={screen === 'history'} />
         </div>
         <div className={pane('settings')}>
           <SettingsScreen />

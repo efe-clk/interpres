@@ -84,29 +84,29 @@ export interface DocumentJob {
   error: ApiError | null
 }
 
-export interface GlossaryEntry {
-  id: string
+/** A glossary term. Language codes are base codes (`TR`, `EN`). */
+export interface Term {
+  id: number
   source: string
   target: string
-  sourceLang: string
-  targetLang: string
 }
 
-export interface Glossary {
-  id: string
-  name: string
-  sourceLang: string
-  targetLang: string
+export interface GlossaryPair {
+  source_lang: string
+  target_lang: string
+  count: number
 }
 
 export interface HistoryEntry {
-  id: string
-  sourceText: string
-  targetText: string
-  source: string | null
-  target: string
+  id: number
+  source_text: string
+  target_text: string
+  source_lang: string | null
+  target_lang: string
+  detected_source: string | null
   engine: EngineId
-  createdAt: string
+  /** Unix seconds. */
+  created_at: number
 }
 
 export type ClaudeCodeStatus = 'found' | 'not_found'
@@ -127,7 +127,6 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
-const uid = () => Math.random().toString(36).slice(2, 10)
 
 // ---------- Browser-only mock state ----------
 
@@ -280,7 +279,7 @@ export function subscribeJobs(cb: (jobs: DocumentJob[]) => void): () => void {
 
 export async function addDocuments(
   paths: string[],
-  opts: { engine: EngineId; request: DocumentRequest; glossary: string | null },
+  opts: { engine: EngineId; request: DocumentRequest; useGlossary: boolean },
 ): Promise<void> {
   if (isTauri) {
     await call('documents_add', { paths, ...opts })
@@ -347,8 +346,15 @@ const mockDocs = (() => {
       cb([...jobs])
       return () => void listeners.delete(cb)
     },
-    add(paths: string[], opts: { engine: EngineId; request: DocumentRequest; glossary: string | null }) {
-      jobs = [...jobs, ...paths.map((p) => ({ ...job(p.split(/[\\/]/).pop() ?? p, 'queued', 0, opts.request.target), ...opts }))]
+    add(paths: string[], opts: { engine: EngineId; request: DocumentRequest; useGlossary: boolean }) {
+      jobs = [
+        ...jobs,
+        ...paths.map((p) => ({
+          ...job(p.split(/[\\/]/).pop() ?? p, 'queued', 0, opts.request.target),
+          engine: opts.engine,
+          request: opts.request,
+        })),
+      ]
       emit()
     },
     update(id: number, f: (j: DocumentJob) => DocumentJob) {
@@ -362,61 +368,84 @@ const mockDocs = (() => {
   }
 })()
 
-// ---------- Glossary (mock until M4) ----------
+// ---------- Glossary ----------
 
-let glossaries: Glossary[] = [
-  { id: 'g1', name: 'Genel', sourceLang: 'TR', targetLang: 'EN-US' },
-  { id: 'g2', name: 'Teknik', sourceLang: 'TR', targetLang: 'DE' },
-]
-let terms: GlossaryEntry[] = [
-  { id: uid(), source: 'çeviri belleği', target: 'translation memory', sourceLang: 'TR', targetLang: 'EN-US' },
-  { id: uid(), source: 'terim sözlüğü', target: 'glossary', sourceLang: 'TR', targetLang: 'EN-US' },
-  { id: uid(), source: 'kaynak dil', target: 'source language', sourceLang: 'TR', targetLang: 'EN-US' },
-  { id: uid(), source: 'sunucu', target: 'Server', sourceLang: 'TR', targetLang: 'DE' },
+/** Browser-only stand-in for the SQLite glossary. */
+const mockTerms: (Term & { source_lang: string; target_lang: string })[] = [
+  { id: 1, source: 'çeviri belleği', target: 'translation memory', source_lang: 'TR', target_lang: 'EN' },
+  { id: 2, source: 'terim sözlüğü', target: 'glossary', source_lang: 'TR', target_lang: 'EN' },
+  { id: 3, source: 'sunucu', target: 'Server', source_lang: 'TR', target_lang: 'DE' },
 ]
 
-export async function listGlossaries(): Promise<Glossary[]> {
-  return glossaries
-}
-
-export async function listTerms(sourceLang: string, targetLang: string): Promise<GlossaryEntry[]> {
-  return terms.filter((t) => t.sourceLang === sourceLang && t.targetLang === targetLang)
-}
-
-export async function upsertTerm(entry: Omit<GlossaryEntry, 'id'> & { id?: string }): Promise<void> {
-  if (entry.id) terms = terms.map((t) => (t.id === entry.id ? { ...t, ...entry, id: t.id } : t))
-  else terms = [...terms, { ...entry, id: uid() }]
-  if (!glossaries.some((g) => g.sourceLang === entry.sourceLang && g.targetLang === entry.targetLang)) {
-    glossaries = [...glossaries, { id: uid(), name: `${entry.sourceLang}-${entry.targetLang}`, sourceLang: entry.sourceLang, targetLang: entry.targetLang }]
+export async function listGlossaryPairs(): Promise<GlossaryPair[]> {
+  if (isTauri) return call('glossary_pairs')
+  const pairs = new Map<string, GlossaryPair>()
+  for (const t of mockTerms) {
+    const k = `${t.source_lang}-${t.target_lang}`
+    const p = pairs.get(k) ?? { source_lang: t.source_lang, target_lang: t.target_lang, count: 0 }
+    p.count++
+    pairs.set(k, p)
   }
+  return [...pairs.values()]
 }
 
-export async function deleteTerm(id: string): Promise<void> {
-  terms = terms.filter((t) => t.id !== id)
+export async function listTerms(sourceLang: string, targetLang: string): Promise<Term[]> {
+  if (isTauri) return call('glossary_terms', { sourceLang, targetLang })
+  return mockTerms.filter((t) => t.source_lang === sourceLang && t.target_lang === targetLang)
 }
 
-export async function importTermsCsv(csv: string, sourceLang: string, targetLang: string): Promise<number> {
-  const rows = csv.split(/\r?\n/).map((l) => l.split(',')).filter((r) => r.length >= 2 && r[0].trim())
-  for (const [s, t] of rows) await upsertTerm({ source: s.trim(), target: t.trim(), sourceLang, targetLang })
-  return rows.length
+export async function upsertTerm(t: {
+  id?: number
+  sourceLang: string
+  targetLang: string
+  source: string
+  target: string
+}): Promise<void> {
+  if (isTauri) return call('glossary_upsert', { ...t, id: t.id ?? null })
+  const i = mockTerms.findIndex((x) => x.id === t.id)
+  const row = { id: t.id ?? Date.now(), source: t.source, target: t.target, source_lang: t.sourceLang, target_lang: t.targetLang }
+  if (i >= 0) mockTerms[i] = row
+  else mockTerms.push(row)
 }
 
-export async function exportTermsCsv(sourceLang: string, targetLang: string): Promise<string> {
-  return (await listTerms(sourceLang, targetLang)).map((t) => `${t.source},${t.target}`).join('\n')
+export async function deleteTerm(id: number): Promise<void> {
+  if (isTauri) return call('glossary_delete', { id })
+  const i = mockTerms.findIndex((x) => x.id === id)
+  if (i >= 0) mockTerms.splice(i, 1)
 }
 
-// ---------- History (mock until M4) ----------
+/** Asks for a CSV file and imports it. Returns the number of terms, or null if cancelled. */
+export async function importTermsCsv(sourceLang: string, targetLang: string): Promise<number | null> {
+  if (!isTauri) return 0
+  const { open } = await import('@tauri-apps/plugin-dialog')
+  const path = await open({ filters: [{ name: 'CSV', extensions: ['csv'] }] })
+  if (!path) return null
+  return call('glossary_import', { path, sourceLang, targetLang })
+}
 
-const history: HistoryEntry[] = [
-  { id: uid(), sourceText: 'Toplantı yarın saat onda başlayacak.', targetText: 'The meeting will start tomorrow at ten.', source: 'TR', target: 'EN-US', engine: 'deepl', createdAt: new Date(Date.now() - 36e5).toISOString() },
-  { id: uid(), sourceText: 'Lütfen ekteki belgeyi inceleyin.', targetText: 'Bitte prüfen Sie das beigefügte Dokument.', source: 'TR', target: 'DE', engine: 'deepl', createdAt: new Date(Date.now() - 864e5).toISOString() },
-  { id: uid(), sourceText: 'Der Vertrag endet am 31. Dezember.', targetText: 'Sözleşme 31 Aralık’ta sona eriyor.', source: 'DE', target: 'TR', engine: 'deepl', createdAt: new Date(Date.now() - 3 * 864e5).toISOString() },
+/** Asks where to save and exports the terms as CSV. Returns the count, or null if cancelled. */
+export async function exportTermsCsv(sourceLang: string, targetLang: string): Promise<number | null> {
+  if (!isTauri) return 0
+  const { save } = await import('@tauri-apps/plugin-dialog')
+  const path = await save({
+    defaultPath: `glossary-${sourceLang}-${targetLang}.csv`,
+    filters: [{ name: 'CSV', extensions: ['csv'] }],
+  })
+  if (!path) return null
+  return call('glossary_export', { path, sourceLang, targetLang })
+}
+
+// ---------- History ----------
+
+const mockHistory: HistoryEntry[] = [
+  { id: 1, source_text: 'Toplantı yarın saat onda başlayacak.', target_text: 'The meeting will start tomorrow at ten.', source_lang: 'TR', target_lang: 'EN-US', detected_source: 'TR', engine: 'deepl', created_at: Date.now() / 1000 - 3600 },
+  { id: 2, source_text: 'Der Vertrag endet am 31. Dezember.', target_text: 'Sözleşme 31 Aralık’ta sona eriyor.', source_lang: null, target_lang: 'TR', detected_source: 'DE', engine: 'deepl', created_at: Date.now() / 1000 - 86400 },
 ]
 
 export async function listHistory(query: string): Promise<HistoryEntry[]> {
+  if (isTauri) return call('history_list', { query })
   const q = query.trim().toLocaleLowerCase()
-  if (!q) return history
-  return history.filter((h) => `${h.sourceText} ${h.targetText}`.toLocaleLowerCase().includes(q))
+  return mockHistory.filter((h) => !q || `${h.source_text} ${h.target_text}`.toLocaleLowerCase().includes(q))
 }
 
 // ---------- Claude and cache ----------
@@ -427,5 +456,6 @@ export async function claudeCodeStatus(): Promise<ClaudeCodeStatus> {
 }
 
 export async function clearCache(): Promise<void> {
+  if (isTauri) return call('cache_clear')
   await sleep(300)
 }

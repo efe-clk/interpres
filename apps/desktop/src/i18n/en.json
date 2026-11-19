@@ -94,7 +94,6 @@
     "target": "Target language",
     "engine": "Engine",
     "glossary": "Glossary",
-    "noGlossary": "No glossary",
     "file": "File",
     "state": "Status",
     "reveal": "Show in folder",
@@ -110,7 +109,9 @@
       "cancelled": "Cancelled"
     },
     "add": "Add files",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "useGlossary": "Apply glossary",
+    "source": "Source language"
   },
   "glossary": {
     "pair": "Language pair",
@@ -124,8 +125,10 @@
     "emptyHint": "Add a term or import a CSV.",
     "noResults": "No results",
     "imported": "{{count}} terms imported",
-    "exported": "CSV copied to clipboard",
-    "csvFormat": "One per line: source,target"
+    "exported": "{{count}} terms exported",
+    "pairs": "Glossaries",
+    "sourceNeeded": "Pick a source language to use the glossary",
+    "active": "Glossary: {{count}} terms"
   },
   "history": {
     "search": "Search history",

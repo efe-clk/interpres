@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Check, Copy, X } from 'lucide-react'
+import { ArrowLeftRight, BookA, Check, Copy, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EngineSelect, LanguageSelect } from '@/components/common/selects'
@@ -40,10 +40,10 @@ export function TextScreen({ active }: { active: boolean }) {
   // Reopen from history.
   useEffect(() => {
     if (!textPreset) return
-    setSource(textPreset.source)
-    setTarget(textPreset.target)
-    setInput(textPreset.sourceText)
-    setResult({ text: textPreset.targetText, detected_source: textPreset.source, engine: textPreset.engine })
+    setSource(textPreset.source_lang)
+    setTarget(textPreset.target_lang)
+    setInput(textPreset.source_text)
+    setResult({ text: textPreset.target_text, detected_source: textPreset.detected_source, engine: textPreset.engine })
     setError(null)
   }, [textPreset])
 
@@ -52,6 +52,19 @@ export function TextScreen({ active }: { active: boolean }) {
   }, [active])
 
   const formalityOk = supportsFormality(target)
+
+  // Number of glossary terms that will apply (only with an explicit source language).
+  const [glossaryCount, setGlossaryCount] = useState(0)
+  useEffect(() => {
+    if (!active || !source) {
+      setGlossaryCount(0)
+      return
+    }
+    api.listTerms(toSource(source), toSource(target)).then(
+      (terms) => setGlossaryCount(terms.length),
+      () => setGlossaryCount(0),
+    )
+  }, [active, source, target])
 
   const run = useCallback(async () => {
     if (!input.trim() || loading) return
@@ -128,6 +141,12 @@ export function TextScreen({ active }: { active: boolean }) {
           label={t('settings.languages.target')}
         />
         <div className="ml-auto flex items-center gap-2">
+          {glossaryCount > 0 && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <BookA className="size-3.5" />
+              {t('glossary.active', { count: glossaryCount })}
+            </span>
+          )}
           <Select value={formalityOk ? formality : 'default'} onValueChange={(v) => setFormality(v as api.Formality)} disabled={!formalityOk}>
             <SelectTrigger className="w-32" aria-label={t('text.formality.label')} title={formalityOk ? undefined : t('text.formality.unsupported')}>
               <SelectValue />

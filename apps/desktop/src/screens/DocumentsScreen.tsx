@@ -6,7 +6,8 @@ import { EmptyState, ErrorNotice, Kbd } from '@/components/common/states'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useHotkey } from '@/hooks/use-hotkey'
@@ -15,7 +16,6 @@ import { useApp } from '@/lib/app-context'
 import { languageName } from '@/lib/languages'
 import { cn } from '@/lib/utils'
 
-const NO_GLOSSARY = '__none'
 const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path
 const ext = (name: string) => name.split('.').pop()?.toLowerCase() ?? ''
 const RUNNING: api.JobStatus[] = ['queued', 'uploading', 'translating', 'downloading']
@@ -24,29 +24,30 @@ export function DocumentsScreen({ active }: { active: boolean }) {
   const { t, i18n } = useTranslation()
   const { settings } = useApp()
   const [jobs, setJobs] = useState<api.DocumentJob[]>([])
-  const [glossaries, setGlossaries] = useState<api.Glossary[]>([])
+  const [source, setSource] = useState<string | null>(settings?.source_lang ?? null)
   const [target, setTarget] = useState(settings?.target_lang ?? 'EN-US')
   const [engine, setEngine] = useState<api.EngineId>('deepl')
-  const [glossary, setGlossary] = useState<string | null>(null)
+  const [useGlossary, setUseGlossary] = useState(true)
   const [hover, setHover] = useState(false)
   const [rejected, setRejected] = useState<string[]>([])
   const [error, setError] = useState<api.ApiError | null>(null)
-  const opts = useRef({ target, engine, glossary, source: settings?.source_lang ?? null })
-  opts.current = { target, engine, glossary, source: settings?.source_lang ?? null }
+  const opts = useRef({ target, engine, useGlossary, source })
+  opts.current = { target, engine, useGlossary, source }
 
   useEffect(() => api.subscribeJobs(setJobs), [])
-  useEffect(() => {
-    void api.listGlossaries().then(setGlossaries)
-  }, [])
 
   const add = async (paths: string[]) => {
     const ok = paths.filter((p) => api.DOCUMENT_EXTENSIONS.includes(ext(p)))
     setRejected(paths.filter((p) => !ok.includes(p)).map(fileName))
     setError(null)
     if (!ok.length) return
-    const { target, engine, glossary, source } = opts.current
+    const { target, engine, useGlossary, source } = opts.current
     try {
-      await api.addDocuments(ok, { engine, glossary, request: { source, target, formality: 'default' } })
+      await api.addDocuments(ok, {
+        engine,
+        useGlossary: useGlossary && !!source,
+        request: { source, target, formality: 'default' },
+      })
     } catch (e) {
       setError(e as api.ApiError)
     }
@@ -74,21 +75,16 @@ export function DocumentsScreen({ active }: { active: boolean }) {
   return (
     <div className="flex h-full flex-col">
       <header className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
-        <LanguageSelect kind="target" value={target} onChange={(v) => v && setTarget(v)} className="w-44" label={t('documents.target')} />
+        <LanguageSelect kind="source" value={source} onChange={setSource} className="w-40" label={t('documents.source')} />
+        <span className="text-muted-foreground">→</span>
+        <LanguageSelect kind="target" value={target} onChange={(v) => v && setTarget(v)} className="w-40" label={t('documents.target')} />
         <EngineSelect value={engine} onChange={setEngine} className="w-32" label={t('documents.engine')} />
-        <Select value={glossary ?? NO_GLOSSARY} onValueChange={(v) => setGlossary(v === NO_GLOSSARY ? null : v)}>
-          <SelectTrigger className="w-40" aria-label={t('documents.glossary')}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            <SelectItem value={NO_GLOSSARY}>{t('documents.noGlossary')}</SelectItem>
-            {glossaries.map((g) => (
-              <SelectItem key={g.id} value={g.name}>
-                {g.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2 pl-1" title={source ? undefined : t('glossary.sourceNeeded')}>
+          <Switch id="use-glossary" checked={useGlossary && !!source} onCheckedChange={setUseGlossary} disabled={!source} />
+          <Label htmlFor="use-glossary" className="text-sm font-normal text-muted-foreground">
+            {t('documents.useGlossary')}
+          </Label>
+        </div>
         <Button size="sm" className="ml-auto" onClick={() => void pick()}>
           <Plus />
           {t('documents.add')}

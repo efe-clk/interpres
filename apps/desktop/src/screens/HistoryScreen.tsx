@@ -1,21 +1,29 @@
 import { History, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { EmptyState } from '@/components/common/states'
+import { EmptyState, ErrorNotice } from '@/components/common/states'
 import { Input } from '@/components/ui/input'
 import * as api from '@/lib/api'
 import { useApp } from '@/lib/app-context'
 import { languageName } from '@/lib/languages'
 
-export function HistoryScreen() {
+export function HistoryScreen({ active }: { active: boolean }) {
   const { t, i18n } = useTranslation()
   const { openInText } = useApp()
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<api.HistoryEntry[] | null>(null)
+  const [error, setError] = useState<api.ApiError | null>(null)
 
   useEffect(() => {
-    void api.listHistory(query).then(setItems)
-  }, [query])
+    if (!active) return
+    api.listHistory(query).then(
+      (h) => {
+        setItems(h)
+        setError(null)
+      },
+      (e) => setError(e as api.ApiError),
+    )
+  }, [query, active])
 
   const fmt = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
 
@@ -28,7 +36,9 @@ export function HistoryScreen() {
         </div>
       </header>
       <div className="min-h-0 flex-1 overflow-auto p-3">
-        {items === null ? null : items.length === 0 ? (
+        {error ? (
+          <ErrorNotice error={error} />
+        ) : items === null ? null : items.length === 0 ? (
           query ? (
             <EmptyState icon={Search} title={t('history.noResults')} className="pt-16" />
           ) : (
@@ -44,14 +54,14 @@ export function HistoryScreen() {
                   className="grid w-full grid-cols-2 gap-4 rounded-md px-3 py-2.5 text-left text-sm hover:bg-muted/60"
                 >
                   <span className="min-w-0">
-                    <span className="block truncate">{h.sourceText}</span>
+                    <span className="block truncate">{h.source_text}</span>
                     <span className="mt-0.5 block text-xs text-muted-foreground">
-                      {h.source ? languageName(h.source, i18n.language) : t('text.auto')} → {languageName(h.target, i18n.language)} · {t(`engine.${h.engine}`)}
+                      {h.source_lang ?? h.detected_source ? languageName((h.source_lang ?? h.detected_source)!, i18n.language) : t('text.auto')} → {languageName(h.target_lang, i18n.language)} · {t(`engine.${h.engine}`)}
                     </span>
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate text-muted-foreground">{h.targetText}</span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">{fmt.format(new Date(h.createdAt))}</span>
+                    <span className="block truncate text-muted-foreground">{h.target_text}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">{fmt.format(new Date(h.created_at * 1000))}</span>
                   </span>
                 </button>
               </li>
