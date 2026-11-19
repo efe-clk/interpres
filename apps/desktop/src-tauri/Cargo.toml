@@ -1,0 +1,25 @@
+[package]
+name = "interpres-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "interpres_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build.workspace = true
+
+[dependencies]
+interpres-core.workspace = true
+interpres-engine-deepl.workspace = true
+serde.workspace = true
+tauri.workspace = true
+tauri-plugin-clipboard-manager.workspace = true
+tauri-plugin-global-shortcut.workspace = true
+tauri-plugin-opener.workspace = true
+tauri-plugin-single-instance.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
