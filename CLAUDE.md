@@ -51,7 +51,11 @@ Kullanıcı kod bilmiyor. Kodu Claude yazar; derleme, test ve arayüz kontrolün
 ### Veri, ayarlar, gizli bilgiler
 
 - SQLite (`rusqlite`, bundled): terim sözlüğü, çeviri belleği, önbellek, geçmiş.
-- Önbellek anahtarı: `hash(motor + kaynak dil + hedef dil + metin + sözlük hash'i)`.
+- Önbellek anahtarı: `hash(motor + kaynak dil + hedef dil + resmiyet + sözlük hash'i + metin)`.
+  Resmiyet de anahtarda; aynı metnin resmî ve samimi çevirisi farklıdır.
+- Sözlükler temel dil çiftine göre tutulur (`TR → EN`) ve yalnızca kaynak dil seçiliyken
+  uygulanır. DeepL'de `interpres TR-EN <hash>` adıyla eşitlenir; terimler değişince yeni
+  sözlük oluşturulup eskisi silinir.
 - Ayarlar: TOML, işletim sisteminin standart ayar klasöründe (`directories` crate).
 - API anahtarları: `keyring` ile işletim sisteminin anahtar deposunda. Asla TOML'a,
   günlüğe ya da repoya yazılmaz.

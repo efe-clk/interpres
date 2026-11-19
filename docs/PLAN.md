@@ -68,7 +68,7 @@ Metin ekranı gerçek çeviri yapar; 900x600'de düzgün; Wayland ve X11'de aç�
 > Not: docx ve pdf gerçek DeepL ile CLI'dan çevrildi, biçim korundu. Arayüzden dosya ekleme
 > (Ctrl+O / sürükle-bırak) otomasyonla denenemedi; kullanıcı denemesi bekliyor.
 
-## [ ] M4 — Sözlük + önbellek + geçmiş
+## [x] M4 — Sözlük + önbellek + geçmiş
 
 - SQLite şeması ve göçler (rusqlite, bundled): `glossary`, `tm` (çeviri belleği),
   `cache`, `history`.
