@@ -39,7 +39,7 @@ Her aşamanın ortak "bitti" ölçütü (aşağıdakilere ek olarak):
 **Bitti:** `echo "Merhaba" | interpres translate --to en` gerçek anahtarla çeviri döndürür;
 hata durumları anlaşılır mesaj verir.
 
-## [ ] M2 — Tauri uygulaması + kabuk + tüm ekranlar
+## [x] M2 — Tauri uygulaması + kabuk + tüm ekranlar
 
 - `apps/desktop`: Tauri v2 + Vite + React + TS + Tailwind + shadcn/ui + lucide-react.
 - `src/lib/api.ts` tek köprü; hazır olmayan özellikler sahte veri.

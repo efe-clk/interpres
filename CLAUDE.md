@@ -120,6 +120,15 @@ npm --prefix apps/desktop run build
 npm --prefix apps/desktop run tauri dev
 ```
 
+### Platform notları
+
+- Linux: `main.rs`, `WEBKIT_DISABLE_DMABUF_RENDERER=1` ayarlar (NVIDIA + Wayland'de
+  WebKitGTK "Error 71" ile çöküyor).
+- Wayland'de küresel kısayol çalışmaz; hızlı çeviri derleyici kısayolundan
+  `interpres-desktop --quick` ile açılır (single-instance eklentisi pencereyi gösterir).
+- Hızlı çeviri penceresinin başlığı `Interpres Quick`; pencere kuralları buna göre yazılır.
+- Arayüz sahte veriyle tarayıcıda da açılır: `npm --prefix apps/desktop run dev`.
+
 Bir aşama ancak `cargo build`, `cargo test`, `cargo clippy` (ve arayüz aşamalarında
 `npm run build`) hatasız geçtiğinde biter.
 
