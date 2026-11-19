@@ -32,8 +32,19 @@ impl<T: AsyncRead + AsyncWrite + Send + Unpin + 'static> Stream for T {}
 pub async fn connect(ep: &Endpoint) -> io::Result<Box<dyn Stream>> {
     #[cfg(windows)]
     {
-        let pipe = tokio::net::windows::named_pipe::ClientOptions::new().open(&ep.0)?;
-        Ok(Box::new(pipe))
+        // ERROR_PIPE_BUSY: every listening instance is taken; one frees up shortly.
+        const ERROR_PIPE_BUSY: i32 = 231;
+        let mut attempts = 0;
+        loop {
+            match tokio::net::windows::named_pipe::ClientOptions::new().open(&ep.0) {
+                Ok(pipe) => return Ok(Box::new(pipe)),
+                Err(e) if e.raw_os_error() == Some(ERROR_PIPE_BUSY) && attempts < 20 => {
+                    attempts += 1;
+                    tokio::time::sleep(std::time::Duration::from_millis(25)).await;
+                }
+                Err(e) => return Err(e),
+            }
+        }
     }
     #[cfg(not(windows))]
     {
@@ -76,6 +87,8 @@ impl Listener {
     pub async fn accept(&mut self) -> io::Result<Box<dyn Stream>> {
         #[cfg(windows)]
         {
+            // Clients arriving before the next instance exists get ERROR_PIPE_BUSY and
+            // retry (see `connect`).
             self.next.connect().await?;
             let fresh = tokio::net::windows::named_pipe::ServerOptions::new().create(&self.name)?;
             let connected = std::mem::replace(&mut self.next, fresh);
