@@ -21,11 +21,14 @@ jobs:
       - id: create
         env:
           GH_TOKEN: ${{ github.token }}
+        # The id comes from the create response: a draft is not yet tied to its tag,
+        # so it cannot be looked up by tag name.
         run: |
-          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-            --draft --title "Interpres $GITHUB_REF_NAME" --generate-notes
-          echo "id=$(gh api repos/$GITHUB_REPOSITORY/releases \
-            --jq ".[] | select(.tag_name == \"$GITHUB_REF_NAME\") | .id")" >> "$GITHUB_OUTPUT"
+          id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
+            -f tag_name="$GITHUB_REF_NAME" -f name="Interpres $GITHUB_REF_NAME" \
+            -F draft=true -F generate_release_notes=true --jq .id)
+          test -n "$id"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
 
   build:
     needs: create
@@ -76,7 +79,10 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$GITHUB_REF_NAME" "${{ matrix.cli_name }}" --repo "$GITHUB_REPOSITORY"
+        run: |
+          gh api -X POST -H "Content-Type: application/octet-stream" \
+            "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/${{ needs.create.outputs.release_id }}/assets?name=${{ matrix.cli_name }}" \
+            --input "${{ matrix.cli_name }}" --silent
 
   publish:
     needs: [create, build]
@@ -84,4 +90,6 @@ jobs:
     steps:
       - env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
+        run: |
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/${{ needs.create.outputs.release_id }}" \
+            -F draft=false --silent
