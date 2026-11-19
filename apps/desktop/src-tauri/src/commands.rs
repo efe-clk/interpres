@@ -1,12 +1,16 @@
 //! Commands invoked from `src/lib/api.ts`. Errors are returned as `EngineError` so the
 //! UI can show one set of states (no key / quota / network / ...).
 
+use std::path::PathBuf;
+
+use interpres_core::documents::DocumentJob;
 use interpres_core::{
-    Engine, EngineError, EngineId, Language, LanguageKind, Settings, TranslateRequest, Translation,
-    secrets,
+    DocumentQueue, DocumentRequest, Engine, EngineError, EngineId, Language, LanguageKind,
+    Settings, TranslateRequest, Translation, secrets,
 };
 use interpres_engine_deepl::{DeeplEngine, Usage};
 use serde::Serialize;
+use tauri::State;
 
 type CmdResult<T> = Result<T, EngineError>;
 
@@ -95,4 +99,50 @@ pub fn claude_code_found() -> bool {
     std::env::var_os("PATH").is_some_and(|path| {
         std::env::split_paths(&path).any(|dir| names.iter().any(|n| dir.join(n).is_file()))
     })
+}
+
+#[tauri::command]
+pub fn documents_list(queue: State<'_, DocumentQueue>) -> Vec<DocumentJob> {
+    queue.jobs()
+}
+
+#[tauri::command]
+pub fn documents_add(
+    queue: State<'_, DocumentQueue>,
+    paths: Vec<PathBuf>,
+    engine: EngineId,
+    request: DocumentRequest,
+    glossary: Option<String>,
+) -> Vec<u64> {
+    paths
+        .into_iter()
+        .map(|p| queue.add(p, engine, request.clone(), glossary.clone()))
+        .collect()
+}
+
+#[tauri::command]
+pub fn documents_cancel(queue: State<'_, DocumentQueue>, id: u64) {
+    queue.cancel(id)
+}
+
+#[tauri::command]
+pub fn documents_remove(queue: State<'_, DocumentQueue>, id: u64) {
+    queue.remove(id)
+}
+
+fn output_of(queue: &DocumentQueue, id: u64) -> CmdResult<PathBuf> {
+    queue
+        .job(id)
+        .and_then(|j| j.output)
+        .ok_or_else(|| EngineError::InvalidRequest("document is not translated yet".into()))
+}
+
+#[tauri::command]
+pub fn documents_reveal(queue: State<'_, DocumentQueue>, id: u64) -> CmdResult<()> {
+    tauri_plugin_opener::reveal_item_in_dir(output_of(&queue, id)?).map_err(internal)
+}
+
+#[tauri::command]
+pub fn documents_open(queue: State<'_, DocumentQueue>, id: u64) -> CmdResult<()> {
+    tauri_plugin_opener::open_path(output_of(&queue, id)?, None::<&str>).map_err(internal)
 }

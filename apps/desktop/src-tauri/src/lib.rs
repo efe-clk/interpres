@@ -2,6 +2,10 @@
 
 mod commands;
 
+use std::sync::Arc;
+
+use interpres_core::{DocumentEngine, DocumentQueue, EngineError, EngineId, secrets};
+use interpres_engine_deepl::DeeplEngine;
 use tauri::{AppHandle, Emitter, Manager, WindowEvent};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
@@ -26,6 +30,7 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
@@ -45,6 +50,7 @@ pub fn run() {
             if std::env::args().any(|a| a == QUICK_FLAG) {
                 show_quick(app.handle());
             }
+            start_document_queue(app.handle());
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -63,6 +69,12 @@ pub fn run() {
             commands::get_settings,
             commands::save_settings,
             commands::claude_code_found,
+            commands::documents_list,
+            commands::documents_add,
+            commands::documents_cancel,
+            commands::documents_remove,
+            commands::documents_reveal,
+            commands::documents_open,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -75,4 +87,34 @@ fn show_quick(app: &AppHandle) {
         let _ = w.set_focus();
         let _ = w.emit("quick-open", ());
     }
+}
+
+/// Engines for queued documents. Keys are read when a job starts.
+fn document_engine(engine: EngineId) -> Result<Arc<dyn DocumentEngine>, EngineError> {
+    match engine {
+        EngineId::Deepl => {
+            let key = secrets::get_key(EngineId::Deepl)
+                .map_err(|e| EngineError::Service(e.to_string()))?
+                .ok_or(EngineError::MissingKey)?;
+            Ok(Arc::new(DeeplEngine::new(key)))
+        }
+        other => Err(EngineError::InvalidRequest(format!(
+            "{other} cannot translate documents yet"
+        ))),
+    }
+}
+
+/// Starts the queue worker and forwards every change to the UI as `documents-changed`.
+fn start_document_queue(app: &AppHandle) {
+    let (queue, worker) = DocumentQueue::new(Box::new(document_engine));
+    let mut rx = queue.subscribe();
+    app.manage(queue);
+    tauri::async_runtime::spawn(worker);
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        while rx.changed().await.is_ok() {
+            let jobs = rx.borrow_and_update().clone();
+            let _ = app.emit("documents-changed", jobs);
+        }
+    });
 }
