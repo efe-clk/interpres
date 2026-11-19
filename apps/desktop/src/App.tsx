@@ -3,7 +3,7 @@ import { CommandPalette } from '@/components/shell/CommandPalette'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useHotkey } from '@/hooks/use-hotkey'
-import { AppProvider, SCREENS, useApp } from '@/lib/app-context'
+import { AppProvider, SCREENS, useApp, useShortcuts } from '@/lib/app-context'
 import { cn } from '@/lib/utils'
 import { DocumentsScreen } from '@/screens/DocumentsScreen'
 import { GlossaryScreen } from '@/screens/GlossaryScreen'
@@ -13,8 +13,9 @@ import { TextScreen } from '@/screens/TextScreen'
 
 function Shell() {
   const { screen, navigate, settings, setPaletteOpen, paletteOpen } = useApp()
+  const shortcuts = useShortcuts()
 
-  useHotkey('mod+k', () => setPaletteOpen(!paletteOpen))
+  useHotkey(shortcuts.palette, () => setPaletteOpen(!paletteOpen))
   useHotkey('mod+,', () => navigate('settings'))
   useEffect(() => {
     // Ctrl+1..5 switch screens.

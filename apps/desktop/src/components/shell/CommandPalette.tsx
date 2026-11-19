@@ -10,7 +10,8 @@ import {
   CommandList,
   CommandShortcut,
 } from '@/components/ui/command'
-import { SCREENS, useApp } from '@/lib/app-context'
+import { SCREENS, useApp, useShortcuts } from '@/lib/app-context'
+import { formatCombo } from '@/lib/shortcuts'
 
 /** Actions the Text screen listens for. */
 export const TEXT_EVENTS = { translate: 'interpres:translate', swap: 'interpres:swap' } as const
@@ -18,6 +19,7 @@ export const TEXT_EVENTS = { translate: 'interpres:translate', swap: 'interpres:
 export function CommandPalette() {
   const { t } = useTranslation()
   const { paletteOpen, setPaletteOpen, navigate, settings, updateSettings } = useApp()
+  const shortcuts = useShortcuts()
 
   const run = (fn: () => void) => {
     setPaletteOpen(false)
@@ -51,12 +53,12 @@ export function CommandPalette() {
           <CommandItem onSelect={() => run(textAction(TEXT_EVENTS.translate))}>
             <Play />
             {t('shortcuts.translate')}
-            <CommandShortcut>Ctrl Enter</CommandShortcut>
+            <CommandShortcut>{formatCombo(shortcuts.translate)}</CommandShortcut>
           </CommandItem>
           <CommandItem onSelect={() => run(textAction(TEXT_EVENTS.swap))}>
             <ArrowLeftRight />
             {t('shortcuts.swap')}
-            <CommandShortcut>Ctrl Shift S</CommandShortcut>
+            <CommandShortcut>{formatCombo(shortcuts.swap)}</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={() =>

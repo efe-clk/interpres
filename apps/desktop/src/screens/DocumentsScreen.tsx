@@ -12,7 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useHotkey } from '@/hooks/use-hotkey'
 import * as api from '@/lib/api'
-import { useApp } from '@/lib/app-context'
+import { useApp, useShortcuts } from '@/lib/app-context'
+import { formatCombo } from '@/lib/shortcuts'
 import { languageName } from '@/lib/languages'
 import { cn } from '@/lib/utils'
 
@@ -23,6 +24,7 @@ const RUNNING: api.JobStatus[] = ['queued', 'uploading', 'translating', 'downloa
 export function DocumentsScreen({ active }: { active: boolean }) {
   const { t, i18n } = useTranslation()
   const { settings } = useApp()
+  const shortcuts = useShortcuts()
   const [jobs, setJobs] = useState<api.DocumentJob[]>([])
   const [source, setSource] = useState<string | null>(settings?.source_lang ?? null)
   const [target, setTarget] = useState(settings?.target_lang ?? 'EN-US')
@@ -53,7 +55,7 @@ export function DocumentsScreen({ active }: { active: boolean }) {
   }
   const pick = async () => void add(await api.pickDocuments())
 
-  useHotkey('mod+o', () => void pick(), active)
+  useHotkey(shortcuts.add_files, () => void pick(), active)
 
   const addRef = useRef(add)
   addRef.current = add
@@ -86,7 +88,7 @@ export function DocumentsScreen({ active }: { active: boolean }) {
         <Button size="sm" className="ml-auto" onClick={() => void pick()}>
           <Plus />
           {t('documents.add')}
-          <span className="ml-1 font-mono text-[11px] opacity-70">Ctrl O</span>
+          <span className="ml-1 font-mono text-[11px] opacity-70">{formatCombo(shortcuts.add_files)}</span>
         </Button>
       </header>
 
@@ -120,7 +122,7 @@ export function DocumentsScreen({ active }: { active: boolean }) {
 
         {jobs.length === 0 ? (
           <EmptyState icon={Inbox} title={t('documents.empty')} hint={t('documents.emptyHint')}>
-            <Kbd>Ctrl O</Kbd>
+            <Kbd>{formatCombo(shortcuts.add_files)}</Kbd>
           </EmptyState>
         ) : (
           <Table className="table-fixed">

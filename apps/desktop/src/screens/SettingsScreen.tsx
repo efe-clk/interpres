@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import * as api from '@/lib/api'
 import { useApp } from '@/lib/app-context'
+import { DEFAULT_SHORTCUTS, comboFromEvent, formatCombo, hasModifier } from '@/lib/shortcuts'
+import { cn } from '@/lib/utils'
 
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -149,19 +151,13 @@ export function SettingsScreen() {
         </Section>
 
         <Section title={t('settings.shortcuts.title')}>
-          {[
-            ['shortcuts.palette', 'Ctrl K'],
-            ['shortcuts.translate', 'Ctrl Enter'],
-            ['shortcuts.swap', 'Ctrl Shift S'],
-            ['shortcuts.copy', 'Ctrl Shift C'],
-            ['shortcuts.addFiles', 'Ctrl O'],
-            ['shortcuts.screens', 'Ctrl 1–5'],
-            ['shortcuts.quick', 'Ctrl Alt T'],
-          ].map(([label, combo]) => (
-            <Row key={label} label={t(label)}>
-              <Kbd>{combo}</Kbd>
-            </Row>
-          ))}
+          <ShortcutsEditor
+            shortcuts={settings.ui.shortcuts}
+            onChange={(shortcuts) => void updateSettings({ ui: { ...settings.ui, shortcuts } })}
+          />
+          <Row label={t('shortcuts.screens')}>
+            <Kbd>Ctrl 1–5</Kbd>
+          </Row>
           <p className="text-xs text-muted-foreground">{t('shortcuts.quickWayland')}</p>
         </Section>
 
@@ -181,5 +177,82 @@ export function SettingsScreen() {
         </Section>
       </div>
     </div>
+  )
+}
+
+const SHORTCUT_LABELS: [keyof api.Shortcuts, string][] = [
+  ['palette', 'shortcuts.palette'],
+  ['translate', 'shortcuts.translate'],
+  ['swap', 'shortcuts.swap'],
+  ['copy', 'shortcuts.copy'],
+  ['add_files', 'shortcuts.addFiles'],
+  ['quick', 'shortcuts.quick'],
+]
+
+function ShortcutsEditor({ shortcuts, onChange }: { shortcuts: api.Shortcuts; onChange: (s: api.Shortcuts) => void }) {
+  const { t } = useTranslation()
+  const [recording, setRecording] = useState<keyof api.Shortcuts | null>(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!recording) return
+    // Capture phase, so the app's own shortcuts do not fire while recording.
+    const onKey = (e: KeyboardEvent) => {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      if (e.key === 'Escape') {
+        setRecording(null)
+        setError('')
+        return
+      }
+      const combo = comboFromEvent(e)
+      if (!combo) return
+      if (!hasModifier(combo)) {
+        setError(t('settings.shortcuts.needModifier'))
+        return
+      }
+      const clash = SHORTCUT_LABELS.find(([k]) => k !== recording && shortcuts[k] === combo)
+      if (clash) {
+        setError(t('settings.shortcuts.conflict', { action: t(clash[1]) }))
+        return
+      }
+      onChange({ ...shortcuts, [recording]: combo })
+      setRecording(null)
+      setError('')
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [recording, shortcuts, onChange, t])
+
+  const isDefault = SHORTCUT_LABELS.every(([k]) => shortcuts[k] === DEFAULT_SHORTCUTS[k])
+
+  return (
+    <>
+      {SHORTCUT_LABELS.map(([key, label]) => (
+        <Row key={key} label={t(label)}>
+          <button
+            onClick={() => {
+              setError('')
+              setRecording(recording === key ? null : key)
+            }}
+            title={t('settings.shortcuts.hint')}
+            className={cn(
+              'rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground hover:text-foreground',
+              recording === key && 'border-primary text-foreground',
+            )}
+          >
+            {recording === key ? t('settings.shortcuts.record') : formatCombo(shortcuts[key])}
+          </button>
+        </Row>
+      ))}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      {!isDefault && (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={() => onChange(DEFAULT_SHORTCUTS)}>
+            {t('settings.shortcuts.reset')}
+          </Button>
+        </div>
+      )}
+    </>
   )
 }

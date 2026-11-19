@@ -159,7 +159,12 @@
       "uiLanguage": "Interface language"
     },
     "shortcuts": {
-      "title": "Shortcuts"
+      "title": "Shortcuts",
+      "record": "Press keys",
+      "conflict": "Already used by: {{action}}",
+      "needModifier": "Use a combination with Ctrl or Alt",
+      "reset": "Reset to defaults",
+      "hint": "Click to change, Esc to cancel"
     },
     "cache": {
       "title": "Cache",

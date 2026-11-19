@@ -9,8 +9,6 @@ use interpres_engine_deepl::DeeplEngine;
 use tauri::{AppHandle, Emitter, Manager, WindowEvent};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
-/// Global shortcut that opens the quick-translate window.
-const QUICK_SHORTCUT: &str = "CommandOrControl+Alt+T";
 /// Command-line flag that opens the quick-translate window (for Wayland compositor binds).
 const QUICK_FLAG: &str = "--quick";
 
@@ -42,11 +40,11 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
-            // Global shortcuts are not available on every platform (e.g. Wayland);
-            // there the user binds `interpres-desktop --quick` in the compositor.
-            if let Err(e) = app.global_shortcut().register(QUICK_SHORTCUT) {
-                tracing::warn!(error = %e, "global shortcut unavailable");
-            }
+            let shortcuts = interpres_core::Settings::default_path()
+                .and_then(|p| interpres_core::Settings::load(&p))
+                .map(|s| s.ui.shortcuts)
+                .unwrap_or_default();
+            register_quick_shortcut(app.handle(), &shortcuts.quick);
             if std::env::args().any(|a| a == QUICK_FLAG) {
                 show_quick(app.handle());
             }
@@ -86,6 +84,43 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+/// `mod+alt+t` → `CommandOrControl+Alt+T` (Tauri accelerator syntax).
+fn to_accelerator(combo: &str) -> String {
+    combo
+        .split('+')
+        .map(|part| match part.to_lowercase().as_str() {
+            "mod" => "CommandOrControl".to_string(),
+            "ctrl" => "Control".to_string(),
+            "alt" => "Alt".to_string(),
+            "shift" => "Shift".to_string(),
+            "meta" => "Super".to_string(),
+            "arrowup" => "Up".to_string(),
+            "arrowdown" => "Down".to_string(),
+            "arrowleft" => "Left".to_string(),
+            "arrowright" => "Right".to_string(),
+            key if key.chars().count() == 1 => key.to_uppercase(),
+            key => {
+                let mut c = key.chars();
+                c.next()
+                    .map(|f| f.to_uppercase().chain(c).collect())
+                    .unwrap_or_default()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("+")
+}
+
+/// Replaces the system-wide quick-translate shortcut. Global shortcuts are not available
+/// everywhere (e.g. Wayland); there the user binds `interpres-desktop --quick` in the
+/// compositor instead.
+pub(crate) fn register_quick_shortcut(app: &AppHandle, combo: &str) {
+    let gs = app.global_shortcut();
+    let _ = gs.unregister_all();
+    if let Err(e) = gs.register(to_accelerator(combo).as_str()) {
+        tracing::warn!(error = %e, combo, "global shortcut unavailable");
+    }
 }
 
 fn show_quick(app: &AppHandle) {
@@ -136,4 +171,20 @@ fn start_document_queue(app: &AppHandle) {
             let _ = app.emit("documents-changed", jobs);
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::to_accelerator;
+
+    #[test]
+    fn converts_combos() {
+        assert_eq!(to_accelerator("mod+alt+t"), "CommandOrControl+Alt+T");
+        assert_eq!(
+            to_accelerator("mod+shift+space"),
+            "CommandOrControl+Shift+Space"
+        );
+        assert_eq!(to_accelerator("ctrl+f5"), "Control+F5");
+        assert_eq!(to_accelerator("alt+arrowup"), "Alt+Up");
+    }
 }

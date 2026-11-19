@@ -159,7 +159,12 @@
       "uiLanguage": "Arayüz dili"
     },
     "shortcuts": {
-      "title": "Kısayollar"
+      "title": "Kısayollar",
+      "record": "Tuşlara basın",
+      "conflict": "Zaten kullanılıyor: {{action}}",
+      "needModifier": "Ctrl veya Alt içeren bir kombinasyon seçin",
+      "reset": "Varsayılanlara döndür",
+      "hint": "Değiştirmek için tıklayın, vazgeçmek için Esc"
     },
     "cache": {
       "title": "Önbellek",

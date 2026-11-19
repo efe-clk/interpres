@@ -90,10 +90,12 @@ pub fn get_settings() -> CmdResult<Settings> {
 }
 
 #[tauri::command]
-pub fn save_settings(settings: Settings) -> CmdResult<()> {
+pub fn save_settings(app: tauri::AppHandle, settings: Settings) -> CmdResult<()> {
     settings
         .save(&Settings::default_path().map_err(internal)?)
-        .map_err(internal)
+        .map_err(internal)?;
+    crate::register_quick_shortcut(&app, &settings.ui.shortcuts.quick);
+    Ok(())
 }
 
 #[tauri::command]
@@ -184,8 +186,21 @@ pub fn glossary_upsert(
 }
 
 #[tauri::command]
-pub fn glossary_delete(store: State<'_, Arc<Store>>, id: i64) -> CmdResult<()> {
-    store.delete_term(id).map_err(internal)
+pub async fn glossary_delete(store: State<'_, Arc<Store>>, id: i64) -> CmdResult<()> {
+    let pair = store.term_pair(id).map_err(internal)?;
+    store.delete_term(id).map_err(internal)?;
+    if let Some((src, tgt)) = pair
+        && store
+            .glossary_terms(&src, &tgt)
+            .map_err(internal)?
+            .is_empty()
+        && let Ok(engine) = deepl()
+        && let Err(e) = engine.delete_glossaries(&src, &tgt).await
+    {
+        // The local delete worked; a leftover DeepL glossary is harmless.
+        tracing::warn!(error = %e, "could not delete the DeepL glossary");
+    }
+    Ok(())
 }
 
 #[tauri::command]

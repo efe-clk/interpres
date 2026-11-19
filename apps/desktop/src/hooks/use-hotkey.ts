@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { eventKey } from '@/lib/shortcuts'
 
 /**
  * Binds a keyboard shortcut such as `mod+k`, `mod+enter`, `mod+shift+s`, `escape`.
@@ -17,7 +18,7 @@ export function useHotkey(combo: string, handler: (e: KeyboardEvent) => void, en
     const alt = parts.includes('alt')
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) !== mod || e.shiftKey !== shift || e.altKey !== alt) return
-      if (e.key.toLowerCase() !== key) return
+      if (eventKey(e) !== key) return
       e.preventDefault()
       ref.current(e)
     }

@@ -25,6 +25,33 @@ pub struct UiSettings {
     pub theme: String,
     /// Interface language, e.g. `tr` or `en`.
     pub language: String,
+    pub shortcuts: Shortcuts,
+}
+
+/// Keyboard shortcuts as `mod+shift+k` (`mod` is Ctrl, or Cmd on macOS).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Shortcuts {
+    pub palette: String,
+    pub translate: String,
+    pub swap: String,
+    pub copy: String,
+    pub add_files: String,
+    /// System-wide: opens the quick-translate window.
+    pub quick: String,
+}
+
+impl Default for Shortcuts {
+    fn default() -> Self {
+        Self {
+            palette: "mod+k".into(),
+            translate: "mod+enter".into(),
+            swap: "mod+shift+s".into(),
+            copy: "mod+shift+c".into(),
+            add_files: "mod+o".into(),
+            quick: "mod+alt+t".into(),
+        }
+    }
 }
 
 impl Default for UiSettings {
@@ -32,6 +59,7 @@ impl Default for UiSettings {
         Self {
             theme: "dark".into(),
             language: "tr".into(),
+            shortcuts: Shortcuts::default(),
         }
     }
 }
@@ -128,6 +156,10 @@ mod tests {
             ui: UiSettings {
                 theme: "light".into(),
                 language: "en".into(),
+                shortcuts: Shortcuts {
+                    quick: "mod+shift+space".into(),
+                    ..Shortcuts::default()
+                },
             },
         };
         s.save(&p).unwrap();
@@ -141,5 +173,6 @@ mod tests {
         assert_eq!(s.engine, EngineId::Deepl);
         assert_eq!(s.target_lang.as_deref(), Some("DE"));
         assert_eq!(s.ui.theme, "dark");
+        assert_eq!(s.ui.shortcuts.palette, "mod+k");
     }
 }

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import i18n from '@/i18n'
 import * as api from '@/lib/api'
+import { DEFAULT_SHORTCUTS } from '@/lib/shortcuts'
 
 export type Screen = 'text' | 'documents' | 'glossary' | 'history' | 'settings'
 export const SCREENS: Screen[] = ['text', 'documents', 'glossary', 'history', 'settings']
@@ -91,6 +92,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       {children}
     </Ctx.Provider>
   )
+}
+
+/** The current shortcuts, or the defaults before settings load. */
+export function useShortcuts(): api.Shortcuts {
+  return useApp().settings?.ui.shortcuts ?? DEFAULT_SHORTCUTS
 }
 
 export function useApp(): AppState {

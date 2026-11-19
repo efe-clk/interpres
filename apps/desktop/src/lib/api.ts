@@ -2,6 +2,7 @@
 // Features without a backend yet return mock data so the UI stays navigable.
 
 import { invoke } from '@tauri-apps/api/core'
+import { DEFAULT_SHORTCUTS } from '@/lib/shortcuts'
 
 export const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
@@ -39,12 +40,22 @@ export interface ApiError {
   message?: string
 }
 
+export interface Shortcuts {
+  palette: string
+  translate: string
+  swap: string
+  copy: string
+  add_files: string
+  /** System-wide: opens the quick-translate window. */
+  quick: string
+}
+
 export interface Settings {
   engine: EngineId
   fallback_engine: EngineId | null
   source_lang: string | null
   target_lang: string | null
-  ui: { theme: 'dark' | 'light'; language: 'tr' | 'en' }
+  ui: { theme: 'dark' | 'light'; language: 'tr' | 'en'; shortcuts: Shortcuts }
 }
 
 export interface KeyStatus {
@@ -133,13 +144,20 @@ const defaultSettings: Settings = {
   fallback_engine: null,
   source_lang: null,
   target_lang: 'EN-US',
-  ui: { theme: 'dark', language: 'tr' },
+  ui: {
+    theme: 'dark',
+    language: 'tr',
+    shortcuts: DEFAULT_SHORTCUTS,
+  },
 }
 
 function loadMockSettings(): Settings {
   try {
     const raw = localStorage.getItem('interpres.settings')
-    if (raw) return { ...defaultSettings, ...JSON.parse(raw) }
+    if (raw) {
+      const s = JSON.parse(raw) as Partial<Settings>
+      return { ...defaultSettings, ...s, ui: { ...defaultSettings.ui, ...s.ui, shortcuts: { ...DEFAULT_SHORTCUTS, ...s.ui?.shortcuts } } }
+    }
   } catch {
     // ignore
   }

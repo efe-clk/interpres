@@ -9,12 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useHotkey } from '@/hooks/use-hotkey'
 import * as api from '@/lib/api'
-import { useApp } from '@/lib/app-context'
+import { useApp, useShortcuts } from '@/lib/app-context'
+import { formatCombo } from '@/lib/shortcuts'
 import { languageName, supportsFormality, toSource, toTarget } from '@/lib/languages'
 
 export function TextScreen({ active }: { active: boolean }) {
   const { t, i18n } = useTranslation()
   const { settings, textPreset } = useApp()
+  const shortcuts = useShortcuts()
 
   const [source, setSource] = useState<string | null>(null)
   const [target, setTarget] = useState('EN-US')
@@ -103,9 +105,9 @@ export function TextScreen({ active }: { active: boolean }) {
     setTimeout(() => setCopied(false), 1200)
   }, [result])
 
-  useHotkey('mod+enter', () => void run(), active)
-  useHotkey('mod+shift+s', swap, active)
-  useHotkey('mod+shift+c', () => void copy(), active)
+  useHotkey(shortcuts.translate, () => void run(), active)
+  useHotkey(shortcuts.swap, swap, active)
+  useHotkey(shortcuts.copy, () => void copy(), active)
 
   useEffect(() => {
     const onTranslate = () => void run()
@@ -128,7 +130,7 @@ export function TextScreen({ active }: { active: boolean }) {
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            {t('text.swap')} · Ctrl Shift S
+            {t('text.swap')} · {formatCombo(shortcuts.swap)}
           </TooltipContent>
         </Tooltip>
         <LanguageSelect
@@ -177,7 +179,7 @@ export function TextScreen({ active }: { active: boolean }) {
             )}
             <Button className="ml-auto" size="sm" onClick={() => void run()} disabled={!input.trim() || loading}>
               {loading ? t('text.translating') : t('text.translate')}
-              <span className="ml-1 font-mono text-[11px] opacity-70">Ctrl ↵</span>
+              <span className="ml-1 font-mono text-[11px] opacity-70">{formatCombo(shortcuts.translate)}</span>
             </Button>
           </footer>
         </section>
@@ -206,7 +208,7 @@ export function TextScreen({ active }: { active: boolean }) {
               <Button variant="ghost" size="sm" className="ml-auto" onClick={() => void copy()}>
                 {copied ? <Check /> : <Copy />}
                 {copied ? t('common.copied') : t('common.copy')}
-                <Kbd>Ctrl Shift C</Kbd>
+                <Kbd>{formatCombo(shortcuts.copy)}</Kbd>
               </Button>
             )}
           </footer>
