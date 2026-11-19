@@ -1,0 +1,23 @@
+# systemd user service for the Interpres daemon (shared document queue).
+#
+# It runs as your user, not as root, because it reads the DeepL key from your
+# keyring. Install:
+#   install -Dm644 interpres-daemon.service ~/.config/systemd/user/interpres-daemon.service
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now interpres-daemon
+# Status and logs:
+#   systemctl --user status interpres-daemon
+#   journalctl --user -u interpres-daemon
+
+[Unit]
+Description=Interpres daemon (shared document translation queue)
+Documentation=https://github.com/efe-clk/interpres
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/interpres-daemon
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target
