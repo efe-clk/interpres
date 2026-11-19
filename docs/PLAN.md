@@ -11,7 +11,7 @@ Her aşamanın ortak "bitti" ölçütü (aşağıdakilere ek olarak):
 
 ---
 
-## [ ] M0 — Workspace iskeleti
+## [x] M0 — Workspace iskeleti
 
 - Cargo workspace; boş crate'ler: `interpres-core`, `interpres-engine-deepl`,
   `interpres-engine-claude` (feature `claude`), `interpres-docs`, `interpres-cli`.
