@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::glossary::Glossary;
+
 /// Identifies a translation engine.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -48,6 +50,9 @@ pub struct TranslateRequest {
     pub target: String,
     #[serde(default)]
     pub formality: Formality,
+    /// Terms to enforce. Engines use it only when `source` is set.
+    #[serde(default)]
+    pub glossary: Option<Glossary>,
 }
 
 /// The result of a translation.

@@ -23,6 +23,9 @@ pub struct DocumentRequest {
     pub target: String,
     #[serde(default)]
     pub formality: Formality,
+    /// Terms to enforce. Engines use it only when `source` is set.
+    #[serde(default)]
+    pub glossary: Option<crate::glossary::Glossary>,
 }
 
 /// Progress reported by an engine while it works on a document.
@@ -404,6 +407,7 @@ mod tests {
             source: None,
             target: "EN-US".into(),
             formality: Formality::Default,
+            glossary: None,
         }
     }
 
