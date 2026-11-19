@@ -1,6 +1,10 @@
-//! DeepL engine: text translation, languages and usage.
+//! DeepL engine: text and document translation, languages and usage.
 //!
 //! Keys ending in `:fx` use the Free endpoint, all others the Pro endpoint.
+
+mod document;
+
+use std::time::Duration;
 
 use async_trait::async_trait;
 use interpres_core::{
@@ -33,6 +37,8 @@ pub struct DeeplEngine {
     http: Client,
     base_url: String,
     key: String,
+    /// Shortest wait between document status checks.
+    poll_interval: Duration,
 }
 
 impl DeeplEngine {
@@ -48,7 +54,14 @@ impl DeeplEngine {
             http: Client::new(),
             base_url: base_url.into().trim_end_matches('/').to_string(),
             key: key.into(),
+            poll_interval: Duration::from_secs(1),
         }
+    }
+
+    /// Sets the shortest wait between document status checks (tests use zero).
+    pub fn with_poll_interval(mut self, interval: Duration) -> Self {
+        self.poll_interval = interval;
+        self
     }
 
     pub fn base_url(&self) -> &str {
