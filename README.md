@@ -38,6 +38,14 @@ Claude Desktop ve diğer istemciler (`mcpServers` ayarı):
 { "mcpServers": { "interpres": { "command": "/tam/yol/interpres-mcp" } } }
 ```
 
+### Daemon
+
+`interpres-daemon` belge kuyruğunu tek bir arka plan sürecinde tutar. Çalışıyorsa
+masaüstü uygulaması, `interpres doc` ve MCP sunucusu belgeleri aynı kuyruğa ekler;
+CLI'dan eklenen belge uygulamanın Belgeler ekranında görünür. Çalışmıyorsa her biri
+belgeyi kendisi çevirir. Linux'ta `$XDG_RUNTIME_DIR/interpres.sock`, Windows'ta
+`\\.\pipe\interpres-<kullanıcı>` üzerinden dinler.
+
 Yeni sürüm: `vX.Y.Z` etiketi gönderilince GitHub Actions paketleri derleyip yayımlar.
 
 ## Derleme
@@ -59,6 +67,7 @@ cargo run -p interpres-cli -- --version
 | `crates/interpres-docs` | Belge ayrıştırma ve yeniden birleştirme |
 | `crates/interpres-cli` | `interpres` komut satırı aracı |
 | `crates/interpres-mcp` | `interpres-mcp` MCP sunucusu (stdio) |
+| `crates/interpres-daemon` | `interpres-daemon`: paylaşılan belge kuyruğu |
 | `apps/desktop` | Tauri v2 masaüstü uygulaması |
 
 ## Lisans

@@ -77,13 +77,15 @@ crates/
   interpres-docs/               # belge ayrıştırma / yeniden birleştirme
   interpres-cli/                # `interpres` komut satırı aracı
   interpres-mcp/                # `interpres-mcp` stdio MCP sunucusu (rmcp)
+  interpres-daemon/             # `interpres-daemon`: paylaşılan belge kuyruğu (soket / named pipe)
 apps/
   desktop/                      # Tauri v2 (src/ = React, src-tauri/ = Rust)
 docs/
   PLAN.md
 ```
 
-Sonraki sürümler: `interpres-daemon` (IPC), `interpres-overlay`.
+Sonraki sürümler: `interpres-overlay`. Daemon yalnızca belge kuyruğunu tutar; sözlük,
+önbellek ve geçmiş SQLite dosyasında zaten süreçler arasında paylaşılır.
 Bu yüzden:
 
 - İş mantığı yalnızca `interpres-core` ve motor crate'lerinde durur. CLI, Tauri, daemon ve

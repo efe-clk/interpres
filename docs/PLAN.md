@@ -132,10 +132,11 @@ Ayarlar'dan değişir ve kalıcıdır; boşalan çiftin DeepL sözlüğü silini
 **Bitti:** Bir MCP istemcisi Interpres'i ekleyip metin ve belge çevirebilir; ikili sürüme
 eklenir.
 
-## [ ] M10 — v0.4: Daemon (IPC servisi)
+## [x] M10 — v0.4: Daemon (IPC servisi)
 
-- `crates/interpres-daemon`: arka planda çalışan tek süreç; kuyruk, önbellek ve sözlük
-  burada yaşar.
+- `crates/interpres-daemon`: arka planda çalışan tek süreç; belge kuyruğu burada yaşar.
+  (Uygulamada değişti: sözlük, önbellek ve geçmiş SQLite dosyasında zaten paylaşıldığı
+  için daemon'a taşınmadı.)
 - IPC: Linux'ta Unix soketi, Windows'ta adlandırılmış boru (named pipe); JSON-RPC benzeri
   istek/yanıt + olay akışı (kuyruk değişiklikleri).
 - Masaüstü uygulaması, CLI ve MCP sunucusu daemon varsa ona bağlanır, yoksa bugünkü gibi
