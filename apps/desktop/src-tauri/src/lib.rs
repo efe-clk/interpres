@@ -3,15 +3,25 @@
 mod commands;
 mod documents;
 
-use std::sync::Arc;
+use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 
 use interpres_core::{DocumentEngine, DocumentQueue, EngineError, EngineId, Store, secrets};
 use interpres_engine_deepl::DeeplEngine;
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Emitter, Manager, WindowEvent};
-use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 /// Command-line flag that opens the quick-translate window (for Wayland compositor binds).
 const QUICK_FLAG: &str = "--quick";
+/// Command-line flag that shows the main window, or sends it to the tray when it is
+/// already in front.
+const TOGGLE_FLAG: &str = "--toggle";
+
+/// The registered show/hide shortcut, to tell it apart from the quick-translate one.
+#[derive(Default)]
+struct ToggleShortcut(Mutex<Option<Shortcut>>);
 
 pub fn run() {
     tracing_subscriber::fmt()
@@ -22,10 +32,10 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             if args.iter().any(|a| a == QUICK_FLAG) {
                 show_quick(app);
-            } else if let Some(w) = app.get_webview_window("main") {
-                let _ = w.unminimize();
-                let _ = w.show();
-                let _ = w.set_focus();
+            } else if args.iter().any(|a| a == TOGGLE_FLAG) {
+                toggle_main(app);
+            } else {
+                show_main(app);
             }
         }))
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -33,19 +43,32 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(|app, _shortcut, event| {
-                    if event.state == ShortcutState::Pressed {
+                .with_handler(|app, shortcut, event| {
+                    if event.state != ShortcutState::Pressed {
+                        return;
+                    }
+                    let toggle = app.state::<ToggleShortcut>();
+                    let is_toggle = toggle
+                        .0
+                        .lock()
+                        .unwrap()
+                        .as_ref()
+                        .is_some_and(|t| t.id() == shortcut.id());
+                    if is_toggle {
+                        toggle_main(app);
+                    } else {
                         show_quick(app);
                     }
                 })
                 .build(),
         )
+        .manage(ToggleShortcut::default())
         .setup(|app| {
-            let shortcuts = interpres_core::Settings::default_path()
+            let settings = interpres_core::Settings::default_path()
                 .and_then(|p| interpres_core::Settings::load(&p))
-                .map(|s| s.ui.shortcuts)
                 .unwrap_or_default();
-            register_quick_shortcut(app.handle(), &shortcuts.quick);
+            register_global_shortcuts(app.handle(), &settings.ui.shortcuts);
+            build_tray(app.handle(), &settings.ui.language)?;
             // Started for quick translate only: keep the main window hidden and stay
             // in the background so the next shortcut press opens instantly.
             if std::env::args().any(|a| a == QUICK_FLAG) {
@@ -59,9 +82,12 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            // The hidden quick window would otherwise keep the app alive.
-            if window.label() == "main" && matches!(event, WindowEvent::CloseRequested { .. }) {
-                window.app_handle().exit(0);
+            // Closing the main window sends it to the tray; "Quit" in the tray exits.
+            if window.label() == "main"
+                && let WindowEvent::CloseRequested { api, .. } = event
+            {
+                api.prevent_close();
+                let _ = window.hide();
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -118,14 +144,87 @@ fn to_accelerator(combo: &str) -> String {
         .join("+")
 }
 
-/// Replaces the system-wide quick-translate shortcut. Global shortcuts are not available
-/// everywhere (e.g. Wayland); there the user binds `interpres-desktop --quick` in the
-/// compositor instead.
-pub(crate) fn register_quick_shortcut(app: &AppHandle, combo: &str) {
+/// Replaces the system-wide shortcuts (quick translate, show/hide). Global shortcuts
+/// are not available everywhere (e.g. Wayland); there the user binds
+/// `interpres-desktop --quick` / `--toggle` in the compositor instead.
+pub(crate) fn register_global_shortcuts(app: &AppHandle, shortcuts: &interpres_core::Shortcuts) {
     let gs = app.global_shortcut();
     let _ = gs.unregister_all();
-    if let Err(e) = gs.register(to_accelerator(combo).as_str()) {
-        tracing::warn!(error = %e, combo, "global shortcut unavailable");
+    if let Err(e) = gs.register(to_accelerator(&shortcuts.quick).as_str()) {
+        tracing::warn!(error = %e, combo = %shortcuts.quick, "global shortcut unavailable");
+    }
+    let toggle = Shortcut::from_str(&to_accelerator(&shortcuts.toggle)).ok();
+    if let Some(t) = &toggle
+        && let Err(e) = gs.register(*t)
+    {
+        tracing::warn!(error = %e, combo = %shortcuts.toggle, "global shortcut unavailable");
+    }
+    *app.state::<ToggleShortcut>().0.lock().unwrap() = toggle;
+}
+
+/// Tray icon with show/hide, quick translate and quit. Labels follow the UI language.
+fn build_tray(app: &AppHandle, language: &str) -> tauri::Result<()> {
+    let (show, quick, quit) = if language == "en" {
+        ("Show / hide", "Quick translate", "Quit")
+    } else {
+        ("Göster / gizle", "Hızlı çeviri", "Çık")
+    };
+    let menu = Menu::with_items(
+        app,
+        &[
+            &MenuItem::with_id(app, "toggle", show, true, None::<&str>)?,
+            &MenuItem::with_id(app, "quick", quick, true, None::<&str>)?,
+            &PredefinedMenuItem::separator(app)?,
+            &MenuItem::with_id(app, "quit", quit, true, None::<&str>)?,
+        ],
+    )?;
+    let mut tray = TrayIconBuilder::with_id("main")
+        .tooltip("Interpres")
+        .menu(&menu)
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "toggle" => toggle_main(app),
+            "quick" => show_quick(app),
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            // Left click, where the platform reports it (not on most Linux trays).
+            if let tauri::tray::TrayIconEvent::Click {
+                button: tauri::tray::MouseButton::Left,
+                button_state: tauri::tray::MouseButtonState::Up,
+                ..
+            } = event
+            {
+                toggle_main(tray.app_handle());
+            }
+        });
+    if let Some(icon) = app.default_window_icon() {
+        tray = tray.icon(icon.clone());
+    }
+    tray.build(app)?;
+    Ok(())
+}
+
+fn show_main(app: &AppHandle) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.unminimize();
+        let _ = w.show();
+        let _ = w.set_focus();
+    }
+}
+
+/// Hidden or behind other windows → bring to front; in front → send to the tray.
+fn toggle_main(app: &AppHandle) {
+    let Some(w) = app.get_webview_window("main") else {
+        return;
+    };
+    let in_front = w.is_visible().unwrap_or(false)
+        && !w.is_minimized().unwrap_or(false)
+        && w.is_focused().unwrap_or(false);
+    if in_front {
+        let _ = w.hide();
+    } else {
+        show_main(app);
     }
 }
 

@@ -96,7 +96,7 @@ pub fn save_settings(app: tauri::AppHandle, settings: Settings) -> CmdResult<()>
     settings
         .save(&Settings::default_path().map_err(internal)?)
         .map_err(internal)?;
-    crate::register_quick_shortcut(&app, &settings.ui.shortcuts.quick);
+    crate::register_global_shortcuts(&app, &settings.ui.shortcuts);
     Ok(())
 }
 

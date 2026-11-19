@@ -9,6 +9,7 @@ export const DEFAULT_SHORTCUTS: Shortcuts = {
   copy: 'mod+shift+c',
   add_files: 'mod+o',
   quick: 'mod+alt+t',
+  toggle: 'alt+q',
 }
 
 const MODIFIERS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph'])

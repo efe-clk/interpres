@@ -39,6 +39,8 @@ pub struct Shortcuts {
     pub add_files: String,
     /// System-wide: opens the quick-translate window.
     pub quick: String,
+    /// System-wide: shows the main window, or sends it to the tray.
+    pub toggle: String,
 }
 
 impl Default for Shortcuts {
@@ -50,6 +52,7 @@ impl Default for Shortcuts {
             copy: "mod+shift+c".into(),
             add_files: "mod+o".into(),
             quick: "mod+alt+t".into(),
+            toggle: "alt+q".into(),
         }
     }
 }

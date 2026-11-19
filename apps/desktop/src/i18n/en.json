@@ -179,8 +179,9 @@
     "copy": "Copy translation",
     "screens": "Switch screens",
     "quick": "Quick translate (global)",
-    "quickWayland": "On Wayland, bind in the compositor: interpres-desktop --quick",
-    "addFiles": "Add files"
+    "quickWayland": "On Wayland, bind in the compositor: interpres-desktop --quick (quick translate), --toggle (show/hide)",
+    "addFiles": "Add files",
+    "toggle": "Show/hide the app (global)"
   },
   "palette": {
     "placeholder": "Search commands",

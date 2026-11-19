@@ -48,6 +48,8 @@ export interface Shortcuts {
   add_files: string
   /** System-wide: opens the quick-translate window. */
   quick: string
+  /** System-wide: shows the main window, or sends it to the tray. */
+  toggle: string
 }
 
 export interface Settings {

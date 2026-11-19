@@ -187,6 +187,7 @@ const SHORTCUT_LABELS: [keyof api.Shortcuts, string][] = [
   ['copy', 'shortcuts.copy'],
   ['add_files', 'shortcuts.addFiles'],
   ['quick', 'shortcuts.quick'],
+  ['toggle', 'shortcuts.toggle'],
 ]
 
 function ShortcutsEditor({ shortcuts, onChange }: { shortcuts: api.Shortcuts; onChange: (s: api.Shortcuts) => void }) {
