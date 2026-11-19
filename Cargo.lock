@@ -2357,6 +2357,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "interpres-daemon"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "interpres-core",
+ "interpres-engine-deepl",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "interpres-desktop"
 version = "0.1.0"
 dependencies = [
@@ -5364,6 +5381,7 @@ dependencies = [
  "libc",
  "mio",
  "pin-project-lite",
+ "signal-hook-registry",
  "socket2",
  "tokio-macros",
  "windows-sys 0.61.2",
