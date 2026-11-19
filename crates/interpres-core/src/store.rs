@@ -256,6 +256,18 @@ impl Store {
         Ok(())
     }
 
+    /// The language pair a term belongs to.
+    pub fn term_pair(&self, id: i64) -> Result<Option<(String, String)>> {
+        Ok(self
+            .conn()
+            .query_row(
+                "SELECT source_lang, target_lang FROM glossary_terms WHERE id = ?1",
+                [id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()?)
+    }
+
     pub fn delete_term(&self, id: i64) -> Result<()> {
         self.conn()
             .execute("DELETE FROM glossary_terms WHERE id = ?1", [id])?;
@@ -459,7 +471,12 @@ mod tests {
             .unwrap();
         assert_eq!(s.glossary_terms("TR", "EN").unwrap()[0].target, "customer");
 
+        assert_eq!(
+            s.term_pair(terms[1].id).unwrap(),
+            Some(("TR".into(), "EN".into()))
+        );
         s.delete_term(terms[1].id).unwrap();
+        assert_eq!(s.term_pair(terms[1].id).unwrap(), None);
         assert_eq!(
             s.glossary_pairs().unwrap(),
             vec![GlossaryPair {

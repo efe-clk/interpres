@@ -3,6 +3,7 @@
 //! DeepL v2 glossaries cannot be edited, so a changed term list gets a new glossary
 //! and the old one is deleted. Glossaries are found by name: `interpres TR-EN <hash>`.
 
+use interpres_core::glossary::base_lang;
 use interpres_core::{EngineError, Glossary};
 use serde::{Deserialize, Serialize};
 
@@ -28,8 +29,16 @@ struct Create<'a> {
     entries_format: &'static str,
 }
 
+fn pair_prefix(source_lang: &str, target_lang: &str) -> String {
+    format!(
+        "interpres {}-{} ",
+        base_lang(source_lang),
+        base_lang(target_lang)
+    )
+}
+
 fn prefix(g: &Glossary) -> String {
-    format!("interpres {}-{} ", g.source_lang, g.target_lang)
+    pair_prefix(&g.source_lang, &g.target_lang)
 }
 
 fn name(g: &Glossary) -> String {
@@ -50,6 +59,26 @@ fn tsv(g: &Glossary) -> String {
 }
 
 impl DeeplEngine {
+    /// Deletes the DeepL glossaries Interpres created for a language pair. Used when
+    /// the pair has no terms left.
+    pub async fn delete_glossaries(
+        &self,
+        source_lang: &str,
+        target_lang: &str,
+    ) -> Result<(), EngineError> {
+        let prefix = pair_prefix(source_lang, target_lang);
+        let list: List = parse(self.send(self.http.get(self.url("/v2/glossaries"))).await?).await?;
+        for item in list
+            .glossaries
+            .iter()
+            .filter(|i| i.name.starts_with(&prefix))
+        {
+            let url = self.url(&format!("/v2/glossaries/{}", item.glossary_id));
+            self.send(self.http.delete(url)).await?;
+        }
+        Ok(())
+    }
+
     /// Returns the id of a DeepL glossary matching `g`, creating it if needed and
     /// deleting outdated ones for the same pair.
     pub async fn ensure_glossary(&self, g: &Glossary) -> Result<String, EngineError> {

@@ -141,3 +141,28 @@ async fn no_glossary_without_source_language() {
     let e = DeeplEngine::with_base_url("k:fx", server.uri());
     e.translate(&req(None)).await.unwrap();
 }
+
+#[tokio::test]
+async fn deletes_glossaries_of_a_pair() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/v2/glossaries"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(json!({"glossaries": [
+                {"glossary_id": "A", "name": "interpres TR-EN 1111111111111111"},
+                {"glossary_id": "B", "name": "interpres TR-DE 1111111111111111"},
+                {"glossary_id": "C", "name": "my own glossary"}
+            ]})),
+        )
+        .mount(&server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/v2/glossaries/A"))
+        .respond_with(ResponseTemplate::new(204))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let e = DeeplEngine::with_base_url("k:fx", server.uri());
+    e.delete_glossaries("tr", "EN-US").await.unwrap();
+}

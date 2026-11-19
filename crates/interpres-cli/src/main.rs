@@ -206,7 +206,7 @@ async fn main() -> Result<()> {
             eprintln!("Key deleted.");
             Ok(())
         }
-        Command::Glossary { action } => glossary(action),
+        Command::Glossary { action } => glossary(action).await,
         Command::History { query, limit } => history(query, limit),
         Command::Cache {
             action: CacheAction::Clear,
@@ -328,7 +328,7 @@ fn store() -> Result<Store> {
     Ok(Store::open(&Store::default_path()?)?)
 }
 
-fn glossary(action: GlossaryAction) -> Result<()> {
+async fn glossary(action: GlossaryAction) -> Result<()> {
     let store = store()?;
     match action {
         GlossaryAction::List => {
@@ -358,6 +358,12 @@ fn glossary(action: GlossaryAction) -> Result<()> {
                 .find(|t| t.source == source)
                 .ok_or_else(|| anyhow!("no such term: {source}"))?;
             store.delete_term(term.id)?;
+            if store.glossary_terms(&pair.from, &pair.to)?.is_empty()
+                && let Ok(engine) = deepl()
+                && let Err(e) = engine.delete_glossaries(&pair.from, &pair.to).await
+            {
+                eprintln!("warning: could not delete the DeepL glossary: {e}");
+            }
         }
         GlossaryAction::Import { pair, file } => {
             let f = std::fs::File::open(&file)
