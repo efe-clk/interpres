@@ -17,8 +17,18 @@ metni çevirir. Motor: DeepL. (Claude desteği ertelendi.)
 | Windows | `Interpres_<sürüm>_x64-setup.exe` |
 | CLI ve MCP | `interpres-cli-<sürüm>-x86_64-linux.tar.gz` / `-windows.zip` |
 
-İlk açılışta Ayarlar'dan DeepL API anahtarını girin. Wayland'de hızlı çeviri için
-derleyicide bir kısayolu `interpres-desktop --quick` komutuna bağlayın.
+İlk açılışta Ayarlar'dan DeepL API anahtarını girin.
+
+Uygulama sistem tepsisinde çalışır: pencereyi kapatmak onu tepsiye gönderir, tepsi
+menüsünden "Çık" ile kapanır. Küresel kısayollar (Ayarlar'dan değiştirilebilir):
+
+| Kısayol | Komut | İş |
+|---|---|---|
+| Alt+Q | `interpres-desktop --toggle` | Kapalıysa açar, arkadaysa öne getirir, öndeyse tepsiye gönderir |
+| Ctrl+Alt+T | `interpres-desktop --quick` | Panodaki metni hızlı çeviri penceresinde çevirir |
+
+Wayland'de uygulamalar küresel kısayol kaydedemez; derleyicide (ör. Hyprland) bu
+komutlara bir kısayol bağlayın.
 
 ### MCP sunucusu
 

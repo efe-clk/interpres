@@ -147,6 +147,17 @@ eklenir.
 **Bitti:** CLI'dan eklenen belge masaüstü uygulamasının kuyruğunda görünür; daemon yokken
 her şey bugünkü gibi çalışır.
 
+## [x] M10b — Sistem tepsisi ve servis (kullanıcı isteği, 2026-11-20)
+
+- Sistem tepsisi simgesi ve menüsü (göster/gizle, hızlı çeviri, çık); pencere kapatılınca
+  tepsiye gider.
+- `--toggle` ve küresel "göster/gizle" kısayolu (varsayılan Alt+Q, Ayarlar'dan değişir);
+  kullanıcının Hyprland'inde Alt+Q'ya bağlı.
+- Daemon için systemd kullanıcı servisi (`packaging/linux/interpres-daemon.service`).
+
+**Bitti:** Alt+Q uygulamayı açar / öne getirir / tepsiye gönderir; tepsi menüsü çalışır;
+`systemctl --user status interpres-daemon` etkin ve çökünce yeniden başlar.
+
 ## [ ] M11 — v2.0: Oyun katmanı (ekran yakalama + OCR + katman)
 
 - `crates/interpres-overlay`. Yalnızca ekran yakalama + OCR + katman; oyun belleğine
