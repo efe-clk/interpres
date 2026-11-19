@@ -130,6 +130,9 @@ npm --prefix apps/desktop run tauri dev
 
 ### Platform notları
 
+- Linux'ta ana pencereye en küçük boyut konmaz: Hyprland pencereyi daha küçük bir döşemeye
+  yerleştirince WebKitGTK içeriği tıklamaların düştüğü yerden kaymış çiziyor (~15 px).
+  Sınır yalnızca Linux dışında koddan (`set_min_size`) konur.
 - Linux: `main.rs`, `WEBKIT_DISABLE_DMABUF_RENDERER=1` ayarlar (NVIDIA + Wayland'de
   WebKitGTK "Error 71" ile çöküyor).
 - Wayland'de küresel kısayol çalışmaz; hızlı çeviri derleyici kısayolundan

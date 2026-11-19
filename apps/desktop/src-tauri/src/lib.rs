@@ -76,6 +76,13 @@ pub fn run() {
             } else if let Some(w) = app.get_webview_window("main") {
                 let _ = w.show();
             }
+            // No minimum size on Linux: tiling compositors (Hyprland) can give the
+            // window a smaller tile than its minimum, and WebKitGTK then draws the
+            // content shifted from where clicks land.
+            #[cfg(not(target_os = "linux"))]
+            if let Some(w) = app.get_webview_window("main") {
+                let _ = w.set_min_size(Some(tauri::LogicalSize::new(900.0, 600.0)));
+            }
             let store = Arc::new(open_store());
             app.manage(store.clone());
             start_document_queue(app.handle(), store);
