@@ -55,7 +55,7 @@ hata durumları anlaşılır mesaj verir.
 **Bitti:** `npm --prefix apps/desktop run tauri dev` açılır; bütün ekranlar gezilebilir;
 Metin ekranı gerçek çeviri yapar; 900x600'de düzgün; Wayland ve X11'de açılır.
 
-## [ ] M3 — DeepL belge çevirisi + kuyruk
+## [x] M3 — DeepL belge çevirisi + kuyruk
 
 - DeepL `/v2/document`: yükle → durum sorgula (geri çekilmeli) → indir.
 - Kuyruk servisi core'da (UI'dan bağımsız): sıra, ilerleme, iptal, hata.
@@ -64,6 +64,9 @@ Metin ekranı gerçek çeviri yapar; 900x600'de düzgün; Wayland ve X11'de aç�
 - Testler: wiremock ile tam döngü, hata ve iptal.
 
 **Bitti:** Bir docx ve bir pdf, arayüzden ve CLI'dan çevrilip biçimi korunmuş olarak iner.
+
+> Not: docx ve pdf gerçek DeepL ile CLI'dan çevrildi, biçim korundu. Arayüzden dosya ekleme
+> (Ctrl+O / sürükle-bırak) otomasyonla denenemedi; kullanıcı denemesi bekliyor.
 
 ## [ ] M4 — Sözlük + önbellek + geçmiş
 
