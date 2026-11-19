@@ -158,5 +158,7 @@ Bir aşama ancak `cargo build`, `cargo test`, `cargo clippy` (ve arayüz aşamal
 
 - Ana dal `main`. Remote: `github.com/efe-clk/interpres` (private).
 - Her aşama ayrı bir commit dizisi; aşama bitince push.
+- Sürüm (`v*` etiketi, GitHub Releases) yalnızca büyük değişikliklerde ve kullanıcı onayıyla
+  çıkar. Küçük değişikliklerde paket derlenmez/yayımlanmaz.
 - Aşama sonunda `docs/PLAN.md`'de aşama işaretlenir ve kullanıcıya deneme için tek komut
   verilir.

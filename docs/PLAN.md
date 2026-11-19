@@ -94,11 +94,14 @@ temiz bir makinede kurulup çalışır.
 
 ## Yol haritası (v0.1 sonrası)
 
+Sürümler yalnızca büyük değişikliklerde ve kullanıcı onayıyla yayımlanır (2026-11-20).
+Aşağıdaki sürüm numaraları yalnızca yön gösterir.
+
 Sıra: önce açık kalan işler, sonra çekirdeği dışarı açan servisler (MCP, daemon), sonra
 en büyük iş olan oyun katmanı, sonra platformlar. Claude en sonda (kullanıcı kararı,
 2026-11-20). Her aşamanın başında, o aşamadaki açık karar soruları kullanıcıya sorulur.
 
-## [ ] M8 — v0.2: Açık işler ve cila
+## [x] M8 — v0.2: Açık işler ve cila
 
 - Hyprland: hızlı çeviri için kısayol (`interpres-desktop --quick`) ve `Interpres Quick`
   penceresini küçük/yüzer açan pencere kuralı. Kullanıcının ayar dosyasına dokunmadan önce
@@ -111,7 +114,10 @@ en büyük iş olan oyun katmanı, sonra platformlar. Claude en sonda (kullanıc
 - Windows kurulumunun gerçek bir Windows makinesinde denenmesi (makine varsa).
 
 **Bitti:** Hyprland'de kısayol hızlı çeviriyi küçük yüzer pencerede açar; kısayollar
-Ayarlar'dan değişir ve kalıcıdır; boşalan çiftin DeepL sözlüğü silinir; `v0.2.0` yayımlanır.
+Ayarlar'dan değişir ve kalıcıdır; boşalan çiftin DeepL sözlüğü silinir.
+
+> Not: Super+Q seçildi (o.rebind; pencere kapatma Super+W'de). Fiziksel tuş basışı,
+> arayüzden dosya ekleme ve Windows denemesi kullanıcıda.
 
 ## [ ] M9 — v0.3: MCP sunucusu
 
@@ -124,7 +130,7 @@ Ayarlar'dan değişir ve kalıcıdır; boşalan çiftin DeepL sözlüğü silini
 - Kurulum notu: Claude Desktop / Claude Code gibi istemcilere nasıl ekleneceği README'de.
 
 **Bitti:** Bir MCP istemcisi Interpres'i ekleyip metin ve belge çevirebilir; ikili sürüme
-eklenir; `v0.3.0` yayımlanır.
+eklenir.
 
 ## [ ] M10 — v0.4: Daemon (IPC servisi)
 
@@ -138,7 +144,7 @@ eklenir; `v0.3.0` yayımlanır.
   kapanınca doğrudan çalışmaya geçiş.
 
 **Bitti:** CLI'dan eklenen belge masaüstü uygulamasının kuyruğunda görünür; daemon yokken
-her şey bugünkü gibi çalışır; `v0.4.0` yayımlanır.
+her şey bugünkü gibi çalışır.
 
 ## [ ] M11 — v2.0: Oyun katmanı (ekran yakalama + OCR + katman)
 
@@ -155,7 +161,7 @@ her şey bugünkü gibi çalışır; `v0.4.0` yayımlanır.
 - Testler: kayıtlı ekran görüntülerinden OCR + çeviri hattı (ağsız, sahte motorla).
 
 **Bitti:** Hyprland'de ve Windows'ta pencereli bir oyunun altyazısı seçilen bölgeden
-okunup çevrilir ve katmanda gösterilir; `v2.0.0` yayımlanır.
+okunup çevrilir ve katmanda gösterilir.
 
 ## [ ] M12 — macOS
 
