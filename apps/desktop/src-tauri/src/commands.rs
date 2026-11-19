@@ -2,11 +2,13 @@
 //! UI can show one set of states (no key / quota / network / ...).
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use interpres_core::documents::DocumentJob;
+use interpres_core::store::{GlossaryPair, HistoryEntry, TermRow};
 use interpres_core::{
     DocumentQueue, DocumentRequest, Engine, EngineError, EngineId, Language, LanguageKind,
-    Settings, TranslateRequest, Translation, secrets,
+    Settings, Store, TranslateRequest, Translation, Translator, secrets,
 };
 use interpres_engine_deepl::{DeeplEngine, Usage};
 use serde::Serialize;
@@ -31,8 +33,14 @@ fn plan_of(key: &str) -> &'static str {
 }
 
 #[tauri::command]
-pub async fn translate(req: TranslateRequest) -> CmdResult<Translation> {
-    deepl()?.translate(&req).await
+pub async fn translate(
+    store: State<'_, Arc<Store>>,
+    req: TranslateRequest,
+) -> CmdResult<Translation> {
+    Translator::new(Arc::new(deepl()?), None)
+        .with_store(store.inner().clone())
+        .translate(&req)
+        .await
 }
 
 #[tauri::command]
@@ -109,15 +117,24 @@ pub fn documents_list(queue: State<'_, DocumentQueue>) -> Vec<DocumentJob> {
 #[tauri::command]
 pub fn documents_add(
     queue: State<'_, DocumentQueue>,
+    store: State<'_, Arc<Store>>,
     paths: Vec<PathBuf>,
     engine: EngineId,
-    request: DocumentRequest,
-    glossary: Option<String>,
-) -> Vec<u64> {
-    paths
+    mut request: DocumentRequest,
+    use_glossary: bool,
+) -> CmdResult<Vec<u64>> {
+    // Glossaries need an explicit source language.
+    if use_glossary && let Some(src) = &request.source {
+        request.glossary = store.glossary(src, &request.target).map_err(internal)?;
+    }
+    let label = request
+        .glossary
+        .as_ref()
+        .map(|g| format!("{} → {}", g.source_lang, g.target_lang));
+    Ok(paths
         .into_iter()
-        .map(|p| queue.add(p, engine, request.clone(), glossary.clone()))
-        .collect()
+        .map(|p| queue.add(p, engine, request.clone(), label.clone()))
+        .collect())
 }
 
 #[tauri::command]
@@ -145,4 +162,79 @@ pub fn documents_reveal(queue: State<'_, DocumentQueue>, id: u64) -> CmdResult<(
 #[tauri::command]
 pub fn documents_open(queue: State<'_, DocumentQueue>, id: u64) -> CmdResult<()> {
     tauri_plugin_opener::open_path(output_of(&queue, id)?, None::<&str>).map_err(internal)
+}
+
+// ---------- Glossary ----------
+
+#[tauri::command]
+pub fn glossary_pairs(store: State<'_, Arc<Store>>) -> CmdResult<Vec<GlossaryPair>> {
+    store.glossary_pairs().map_err(internal)
+}
+
+#[tauri::command]
+pub fn glossary_terms(
+    store: State<'_, Arc<Store>>,
+    source_lang: String,
+    target_lang: String,
+) -> CmdResult<Vec<TermRow>> {
+    store
+        .glossary_terms(&source_lang, &target_lang)
+        .map_err(internal)
+}
+
+#[tauri::command]
+pub fn glossary_upsert(
+    store: State<'_, Arc<Store>>,
+    id: Option<i64>,
+    source_lang: String,
+    target_lang: String,
+    source: String,
+    target: String,
+) -> CmdResult<()> {
+    store
+        .upsert_term(id, &source_lang, &target_lang, &source, &target)
+        .map_err(|e| EngineError::InvalidRequest(e.to_string()))
+}
+
+#[tauri::command]
+pub fn glossary_delete(store: State<'_, Arc<Store>>, id: i64) -> CmdResult<()> {
+    store.delete_term(id).map_err(internal)
+}
+
+#[tauri::command]
+pub fn glossary_import(
+    store: State<'_, Arc<Store>>,
+    path: PathBuf,
+    source_lang: String,
+    target_lang: String,
+) -> CmdResult<usize> {
+    let f = std::fs::File::open(&path).map_err(|e| EngineError::InvalidRequest(e.to_string()))?;
+    store
+        .import_csv(&source_lang, &target_lang, f)
+        .map_err(|e| EngineError::InvalidRequest(e.to_string()))
+}
+
+#[tauri::command]
+pub fn glossary_export(
+    store: State<'_, Arc<Store>>,
+    path: PathBuf,
+    source_lang: String,
+    target_lang: String,
+) -> CmdResult<usize> {
+    let f = std::fs::File::create(&path).map_err(|e| EngineError::InvalidRequest(e.to_string()))?;
+    store
+        .export_csv(&source_lang, &target_lang, f)
+        .map_err(internal)
+}
+
+// ---------- History and cache ----------
+
+#[tauri::command]
+pub fn history_list(store: State<'_, Arc<Store>>, query: String) -> CmdResult<Vec<HistoryEntry>> {
+    store.history(&query, 200).map_err(internal)
+}
+
+#[tauri::command]
+pub fn cache_clear(store: State<'_, Arc<Store>>) -> CmdResult<()> {
+    store.cache_clear().map_err(internal)
 }

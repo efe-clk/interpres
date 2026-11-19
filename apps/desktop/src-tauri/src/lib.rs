@@ -4,7 +4,7 @@ mod commands;
 
 use std::sync::Arc;
 
-use interpres_core::{DocumentEngine, DocumentQueue, EngineError, EngineId, secrets};
+use interpres_core::{DocumentEngine, DocumentQueue, EngineError, EngineId, Store, secrets};
 use interpres_engine_deepl::DeeplEngine;
 use tauri::{AppHandle, Emitter, Manager, WindowEvent};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
@@ -50,6 +50,7 @@ pub fn run() {
             if std::env::args().any(|a| a == QUICK_FLAG) {
                 show_quick(app.handle());
             }
+            app.manage(Arc::new(open_store()));
             start_document_queue(app.handle());
             Ok(())
         })
@@ -75,6 +76,14 @@ pub fn run() {
             commands::documents_remove,
             commands::documents_reveal,
             commands::documents_open,
+            commands::glossary_pairs,
+            commands::glossary_terms,
+            commands::glossary_upsert,
+            commands::glossary_delete,
+            commands::glossary_import,
+            commands::glossary_export,
+            commands::history_list,
+            commands::cache_clear,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -86,6 +95,17 @@ fn show_quick(app: &AppHandle) {
         let _ = w.show();
         let _ = w.set_focus();
         let _ = w.emit("quick-open", ());
+    }
+}
+
+/// Opens the database; falls back to an in-memory one so the app still starts.
+fn open_store() -> Store {
+    match Store::default_path().and_then(|p| Store::open(&p)) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::error!(error = %e, "could not open the database; using a temporary one");
+            Store::open_in_memory().expect("in-memory SQLite")
+        }
     }
 }
 
