@@ -7,11 +7,25 @@ version = "0.1.0"
 edition = "2024"
 license = "AGPL-3.0-only"
 repository = "https://github.com/efe-clk/interpres"
-rust-version = "1.85"
+rust-version = "1.88"
 
 [workspace.dependencies]
 interpres-core = { path = "crates/interpres-core" }
 interpres-engine-deepl = { path = "crates/interpres-engine-deepl" }
 interpres-engine-claude = { path = "crates/interpres-engine-claude" }
 interpres-docs = { path = "crates/interpres-docs" }
+anyhow = "1"
+async-trait = "0.1"
 clap = { version = "4", features = ["derive"] }
+directories = "6"
+futures = "0.3"
+keyring = "4"
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "http2", "json", "query"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "io-std", "io-util"] }
+toml = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+wiremock = "0.6"
