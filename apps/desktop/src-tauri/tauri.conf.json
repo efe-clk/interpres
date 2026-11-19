@@ -39,13 +39,34 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": [
+      "appimage",
+      "deb",
+      "nsis"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "category": "Utility",
+    "shortDescription": "Document and text translator",
+    "longDescription": "Interpres translates large documents without breaking their format, and plain text, using DeepL.",
+    "license": "AGPL-3.0-only",
+    "licenseFile": "../../../LICENSE",
+    "homepage": "https://github.com/efe-clk/interpres",
+    "publisher": "Interpres",
+    "copyright": "Copyright (C) 2026 Interpres contributors. AGPL-3.0-only.",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": [
+          "Turkish",
+          "English"
+        ]
+      }
+    }
   }
 }
