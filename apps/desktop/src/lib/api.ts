@@ -32,6 +32,7 @@ export type ErrorKind =
   | 'network'
   | 'invalid_request'
   | 'service'
+  | 'cancelled'
 
 export interface ApiError {
   kind: ErrorKind
@@ -55,17 +56,32 @@ export interface Usage {
   character_limit: number
 }
 
-export type JobStatus = 'queued' | 'uploading' | 'translating' | 'downloading' | 'done' | 'error'
+export type JobStatus =
+  | 'queued'
+  | 'uploading'
+  | 'translating'
+  | 'downloading'
+  | 'done'
+  | 'error'
+  | 'cancelled'
+
+export interface DocumentRequest {
+  source: string | null
+  target: string
+  formality: Formality
+}
 
 export interface DocumentJob {
-  id: string
+  id: number
   name: string
+  input: string
+  output: string | null
+  engine: EngineId
+  request: DocumentRequest
+  glossary: string | null
   status: JobStatus
   progress: number
-  engine: EngineId
-  target: string
-  glossary: string | null
-  error?: ErrorKind
+  error: ApiError | null
 }
 
 export interface GlossaryEntry {
@@ -209,7 +225,7 @@ export async function onQuickOpen(cb: () => void): Promise<() => void> {
   return listen('quick-open', cb)
 }
 
-// ---------- Documents (mock until M3) ----------
+// ---------- Documents ----------
 
 export const DOCUMENT_EXTENSIONS = ['docx', 'pptx', 'xlsx', 'pdf', 'srt', 'md', 'txt']
 
@@ -233,48 +249,118 @@ export async function onFileDrop(
   })
 }
 
-let jobs: DocumentJob[] = [
-  { id: uid(), name: 'rapor-2026.docx', status: 'done', progress: 100, engine: 'deepl', target: 'EN-US', glossary: null },
-  { id: uid(), name: 'sunum.pptx', status: 'translating', progress: 45, engine: 'deepl', target: 'DE', glossary: 'Teknik' },
-  { id: uid(), name: 'butce.xlsx', status: 'error', progress: 0, engine: 'deepl', target: 'EN-US', glossary: null, error: 'quota_exceeded' },
-]
-const jobListeners = new Set<(j: DocumentJob[]) => void>()
-const emitJobs = () => jobListeners.forEach((l) => l([...jobs]))
-
-setInterval(() => {
-  let changed = false
-  jobs = jobs.map((j) => {
-    if (j.status === 'done' || j.status === 'error') return j
-    changed = true
-    const progress = Math.min(100, j.progress + 7)
-    const status: JobStatus =
-      progress >= 100 ? 'done' : progress < 10 ? 'uploading' : progress > 90 ? 'downloading' : 'translating'
-    return { ...j, progress, status }
+/** Opens the system file picker. Returns the chosen paths (empty if cancelled). */
+export async function pickDocuments(): Promise<string[]> {
+  if (!isTauri) return ['ornek-sozlesme.docx']
+  const { open } = await import('@tauri-apps/plugin-dialog')
+  const picked = await open({
+    multiple: true,
+    filters: [{ name: 'Documents', extensions: DOCUMENT_EXTENSIONS }],
   })
-  if (changed) emitJobs()
-}, 700)
+  return picked ?? []
+}
 
-export function subscribeJobs(cb: (j: DocumentJob[]) => void): () => void {
-  jobListeners.add(cb)
-  cb([...jobs])
-  return () => jobListeners.delete(cb)
+/** Calls `cb` with the job list now and on every change. Returns an unsubscribe fn. */
+export function subscribeJobs(cb: (jobs: DocumentJob[]) => void): () => void {
+  if (!isTauri) return mockDocs.subscribe(cb)
+  let off: (() => void) | undefined
+  let stopped = false
+  void (async () => {
+    const { listen } = await import('@tauri-apps/api/event')
+    const unlisten = await listen<DocumentJob[]>('documents-changed', (e) => cb(e.payload))
+    if (stopped) unlisten()
+    else off = unlisten
+    cb(await call<DocumentJob[]>('documents_list'))
+  })()
+  return () => {
+    stopped = true
+    off?.()
+  }
 }
 
 export async function addDocuments(
-  names: string[],
-  opts: { engine: EngineId; target: string; glossary: string | null },
+  paths: string[],
+  opts: { engine: EngineId; request: DocumentRequest; glossary: string | null },
 ): Promise<void> {
-  jobs = [...jobs, ...names.map((name) => ({ id: uid(), name, status: 'queued' as const, progress: 0, ...opts }))]
-  emitJobs()
+  if (isTauri) {
+    await call('documents_add', { paths, ...opts })
+    return
+  }
+  mockDocs.add(paths, opts)
 }
 
-export async function removeDocument(id: string): Promise<void> {
-  jobs = jobs.filter((j) => j.id !== id)
-  emitJobs()
+export async function cancelDocument(id: number): Promise<void> {
+  if (isTauri) return call('documents_cancel', { id })
+  mockDocs.update(id, (j) => ({ ...j, status: 'cancelled' }))
 }
 
-export async function revealDocument(_id: string): Promise<void> {}
-export async function openDocument(_id: string): Promise<void> {}
+export async function removeDocument(id: number): Promise<void> {
+  if (isTauri) return call('documents_remove', { id })
+  mockDocs.remove(id)
+}
+
+export async function revealDocument(id: number): Promise<void> {
+  if (isTauri) return call('documents_reveal', { id })
+}
+
+export async function openDocument(id: number): Promise<void> {
+  if (isTauri) return call('documents_open', { id })
+}
+
+/** Browser-only stand-in for the Rust queue. */
+const mockDocs = (() => {
+  let nextId = 1
+  const job = (name: string, status: JobStatus, progress: number, target: string, error: ApiError | null = null): DocumentJob => ({
+    id: nextId++,
+    name,
+    input: `/home/user/${name}`,
+    output: status === 'done' ? `/home/user/${name}` : null,
+    engine: 'deepl',
+    request: { source: null, target, formality: 'default' },
+    glossary: null,
+    status,
+    progress,
+    error,
+  })
+  let jobs: DocumentJob[] = [
+    job('rapor-2026.docx', 'done', 100, 'EN-US'),
+    job('sunum.pptx', 'translating', 45, 'DE'),
+    job('butce.xlsx', 'error', 0, 'EN-US', { kind: 'quota_exceeded' }),
+  ]
+  const listeners = new Set<(j: DocumentJob[]) => void>()
+  const emit = () => listeners.forEach((l) => l([...jobs]))
+  setInterval(() => {
+    let changed = false
+    jobs = jobs.map((j) => {
+      if (['done', 'error', 'cancelled'].includes(j.status)) return j
+      changed = true
+      const progress = Math.min(100, j.progress + 7)
+      const status: JobStatus =
+        progress >= 100 ? 'done' : progress < 10 ? 'uploading' : progress > 90 ? 'downloading' : 'translating'
+      return { ...j, progress, status }
+    })
+    if (changed) emit()
+  }, 700)
+  return {
+    subscribe(cb: (j: DocumentJob[]) => void) {
+      listeners.add(cb)
+      cb([...jobs])
+      return () => void listeners.delete(cb)
+    },
+    add(paths: string[], opts: { engine: EngineId; request: DocumentRequest; glossary: string | null }) {
+      jobs = [...jobs, ...paths.map((p) => ({ ...job(p.split(/[\\/]/).pop() ?? p, 'queued', 0, opts.request.target), ...opts }))]
+      emit()
+    },
+    update(id: number, f: (j: DocumentJob) => DocumentJob) {
+      jobs = jobs.map((j) => (j.id === id ? f(j) : j))
+      emit()
+    },
+    remove(id: number) {
+      jobs = jobs.filter((j) => j.id !== id)
+      emit()
+    },
+  }
+})()
 
 // ---------- Glossary (mock until M4) ----------
 

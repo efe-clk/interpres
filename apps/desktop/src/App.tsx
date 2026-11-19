@@ -41,7 +41,7 @@ function Shell() {
           <TextScreen active={screen === 'text'} />
         </div>
         <div className={pane('documents')}>
-          <DocumentsScreen />
+          <DocumentsScreen active={screen === 'documents'} />
         </div>
         <div className={pane('glossary')}>
           <GlossaryScreen />

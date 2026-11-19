@@ -34,13 +34,38 @@
     "comingIn": "{{milestone}} aşamasında gelecek"
   },
   "errors": {
-    "missing_key": { "title": "DeepL anahtarı yok", "hint": "Ayarlar'dan bir anahtar ekleyin." },
-    "invalid_key": { "title": "Anahtar geçersiz", "hint": "Anahtarı Ayarlar'dan kontrol edin." },
-    "quota_exceeded": { "title": "Kota doldu", "hint": "Bu ayın karakter sınırına ulaşıldı." },
-    "rate_limited": { "title": "Çok fazla istek", "hint": "Biraz bekleyip tekrar deneyin." },
-    "network": { "title": "Ağ yok", "hint": "İnternet bağlantısını kontrol edin." },
-    "invalid_request": { "title": "İstek geçersiz", "hint": "" },
-    "service": { "title": "Hizmet hatası", "hint": "" }
+    "missing_key": {
+      "title": "DeepL anahtarı yok",
+      "hint": "Ayarlar'dan bir anahtar ekleyin."
+    },
+    "invalid_key": {
+      "title": "Anahtar geçersiz",
+      "hint": "Anahtarı Ayarlar'dan kontrol edin."
+    },
+    "quota_exceeded": {
+      "title": "Kota doldu",
+      "hint": "Bu ayın karakter sınırına ulaşıldı."
+    },
+    "rate_limited": {
+      "title": "Çok fazla istek",
+      "hint": "Biraz bekleyip tekrar deneyin."
+    },
+    "network": {
+      "title": "Ağ yok",
+      "hint": "İnternet bağlantısını kontrol edin."
+    },
+    "invalid_request": {
+      "title": "İstek geçersiz",
+      "hint": ""
+    },
+    "service": {
+      "title": "Hizmet hatası",
+      "hint": ""
+    },
+    "cancelled": {
+      "title": "İptal edildi",
+      "hint": ""
+    }
   },
   "text": {
     "auto": "Otomatik algıla",
@@ -63,7 +88,6 @@
   "documents": {
     "drop": "Dosyaları buraya bırakın",
     "dropHint": "docx, pptx, xlsx, pdf, srt, md, txt",
-    "addSample": "Örnek dosya ekle",
     "unsupported": "Desteklenmeyen dosya: {{name}}",
     "empty": "Kuyruk boş",
     "emptyHint": "Çevirmek için dosya bırakın.",
@@ -82,8 +106,11 @@
       "translating": "Çevriliyor",
       "downloading": "İndiriliyor",
       "done": "Bitti",
-      "error": "Hata"
-    }
+      "error": "Hata",
+      "cancelled": "İptal edildi"
+    },
+    "add": "Dosya ekle",
+    "cancel": "İptal et"
   },
   "glossary": {
     "pair": "Dil çifti",
@@ -160,7 +187,8 @@
     "copy": "Çeviriyi kopyala",
     "screens": "Ekranlar arasında geçiş",
     "quick": "Hızlı çeviri (küresel)",
-    "quickWayland": "Wayland'de derleyiciye bağlayın: interpres-desktop --quick"
+    "quickWayland": "Wayland'de derleyiciye bağlayın: interpres-desktop --quick",
+    "addFiles": "Dosya ekle"
   },
   "palette": {
     "placeholder": "Komut ara",

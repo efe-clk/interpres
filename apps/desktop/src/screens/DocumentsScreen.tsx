@@ -1,14 +1,15 @@
-import { ExternalLink, FileText, FolderOpen, Inbox, Trash2, Upload } from 'lucide-react'
+import { ExternalLink, FileText, FolderOpen, Inbox, Plus, Trash2, Upload, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EngineSelect, LanguageSelect } from '@/components/common/selects'
-import { EmptyState } from '@/components/common/states'
+import { EmptyState, ErrorNotice, Kbd } from '@/components/common/states'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useHotkey } from '@/hooks/use-hotkey'
 import * as api from '@/lib/api'
 import { useApp } from '@/lib/app-context'
 import { languageName } from '@/lib/languages'
@@ -17,8 +18,9 @@ import { cn } from '@/lib/utils'
 const NO_GLOSSARY = '__none'
 const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path
 const ext = (name: string) => name.split('.').pop()?.toLowerCase() ?? ''
+const RUNNING: api.JobStatus[] = ['queued', 'uploading', 'translating', 'downloading']
 
-export function DocumentsScreen() {
+export function DocumentsScreen({ active }: { active: boolean }) {
   const { t, i18n } = useTranslation()
   const { settings } = useApp()
   const [jobs, setJobs] = useState<api.DocumentJob[]>([])
@@ -28,26 +30,46 @@ export function DocumentsScreen() {
   const [glossary, setGlossary] = useState<string | null>(null)
   const [hover, setHover] = useState(false)
   const [rejected, setRejected] = useState<string[]>([])
-  const opts = useRef({ target, engine, glossary })
-  opts.current = { target, engine, glossary }
+  const [error, setError] = useState<api.ApiError | null>(null)
+  const opts = useRef({ target, engine, glossary, source: settings?.source_lang ?? null })
+  opts.current = { target, engine, glossary, source: settings?.source_lang ?? null }
 
   useEffect(() => api.subscribeJobs(setJobs), [])
   useEffect(() => {
     void api.listGlossaries().then(setGlossaries)
   }, [])
 
-  const add = (paths: string[]) => {
-    const names = paths.map(fileName)
-    const ok = names.filter((n) => api.DOCUMENT_EXTENSIONS.includes(ext(n)))
-    setRejected(names.filter((n) => !ok.includes(n)))
-    if (ok.length) void api.addDocuments(ok, opts.current)
+  const add = async (paths: string[]) => {
+    const ok = paths.filter((p) => api.DOCUMENT_EXTENSIONS.includes(ext(p)))
+    setRejected(paths.filter((p) => !ok.includes(p)).map(fileName))
+    setError(null)
+    if (!ok.length) return
+    const { target, engine, glossary, source } = opts.current
+    try {
+      await api.addDocuments(ok, { engine, glossary, request: { source, target, formality: 'default' } })
+    } catch (e) {
+      setError(e as api.ApiError)
+    }
   }
+  const pick = async () => void add(await api.pickDocuments())
 
+  useHotkey('mod+o', () => void pick(), active)
+
+  const addRef = useRef(add)
+  addRef.current = add
   useEffect(() => {
     let off = () => {}
-    void api.onFileDrop(setHover, add).then((f) => (off = f))
-    return () => off()
+    let stopped = false
+    void api
+      .onFileDrop(setHover, (paths) => void addRef.current(paths))
+      .then((f) => (stopped ? f() : (off = f)))
+    return () => {
+      stopped = true
+      off()
+    }
   }, [])
+
+  const act = (fn: () => Promise<void>) => () => void fn().catch((e) => setError(e as api.ApiError))
 
   return (
     <div className="flex h-full flex-col">
@@ -67,6 +89,11 @@ export function DocumentsScreen() {
             ))}
           </SelectContent>
         </Select>
+        <Button size="sm" className="ml-auto" onClick={() => void pick()}>
+          <Plus />
+          {t('documents.add')}
+          <span className="ml-1 font-mono text-[11px] opacity-70">Ctrl O</span>
+        </Button>
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-5">
@@ -79,78 +106,75 @@ export function DocumentsScreen() {
           onDrop={(e) => {
             e.preventDefault()
             setHover(false)
-            add(Array.from(e.dataTransfer.files).map((f) => f.name))
+            void add(Array.from(e.dataTransfer.files).map((f) => f.name))
           }}
+          onClick={() => void pick()}
           className={cn(
-            'flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border px-6 py-8 text-center transition-colors',
+            'flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border px-6 py-8 text-center transition-colors hover:bg-muted/30',
             hover && 'border-primary bg-primary/5',
           )}
         >
           <Upload className="size-5 text-muted-foreground" strokeWidth={1.5} />
           <p className="text-sm font-medium">{t('documents.drop')}</p>
           <p className="text-xs text-muted-foreground">{t('documents.dropHint')}</p>
-          <Button variant="outline" size="sm" className="mt-2" onClick={() => add(['ornek-sozlesme.docx'])}>
-            {t('documents.addSample')}
-          </Button>
           {rejected.length > 0 && (
             <p className="mt-1 text-xs text-destructive">{rejected.map((n) => t('documents.unsupported', { name: n })).join(' · ')}</p>
           )}
         </div>
 
+        {error && <ErrorNotice error={error} />}
+
         {jobs.length === 0 ? (
-          <EmptyState icon={Inbox} title={t('documents.empty')} hint={t('documents.emptyHint')} />
+          <EmptyState icon={Inbox} title={t('documents.empty')} hint={t('documents.emptyHint')}>
+            <Kbd>Ctrl O</Kbd>
+          </EmptyState>
         ) : (
-          <Table>
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
                 <TableHead>{t('documents.file')}</TableHead>
-                <TableHead className="w-28">{t('documents.target')}</TableHead>
+                <TableHead className="w-32">{t('documents.target')}</TableHead>
                 <TableHead className="w-24">{t('documents.engine')}</TableHead>
                 <TableHead className="w-44">{t('documents.state')}</TableHead>
-                <TableHead className="w-24" />
+                <TableHead className="w-28" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {jobs.map((j) => (
                 <TableRow key={j.id}>
                   <TableCell>
-                    <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex min-w-0 items-center gap-2" title={j.input}>
                       <FileText className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.5} />
                       <span className="truncate">{j.name}</span>
                     </div>
                     {j.glossary && <span className="ml-6 text-xs text-muted-foreground">{j.glossary}</span>}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{languageName(j.target, i18n.language)}</TableCell>
+                  <TableCell className="truncate text-muted-foreground">{languageName(j.request.target, i18n.language)}</TableCell>
                   <TableCell className="text-muted-foreground">{t(`engine.${j.engine}`)}</TableCell>
                   <TableCell>
-                    {j.status === 'error' ? (
-                      <Badge variant="destructive">{j.error ? t(`errors.${j.error}.title`) : t('documents.status.error')}</Badge>
-                    ) : j.status === 'done' ? (
-                      <Badge variant="secondary">{t('documents.status.done')}</Badge>
-                    ) : (
-                      <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground">
-                          {t(`documents.status.${j.status}`)} · {j.progress}%
-                        </span>
-                        <Progress value={j.progress} className="h-1" />
-                      </div>
-                    )}
+                    <JobState job={j} />
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-0.5">
                       {j.status === 'done' && (
                         <>
-                          <IconAction label={t('documents.reveal')} onClick={() => void api.revealDocument(j.id)}>
+                          <IconAction label={t('documents.reveal')} onClick={act(() => api.revealDocument(j.id))}>
                             <FolderOpen />
                           </IconAction>
-                          <IconAction label={t('documents.open')} onClick={() => void api.openDocument(j.id)}>
+                          <IconAction label={t('documents.open')} onClick={act(() => api.openDocument(j.id))}>
                             <ExternalLink />
                           </IconAction>
                         </>
                       )}
-                      <IconAction label={t('documents.remove')} onClick={() => void api.removeDocument(j.id)}>
-                        <Trash2 />
-                      </IconAction>
+                      {RUNNING.includes(j.status) ? (
+                        <IconAction label={t('documents.cancel')} onClick={act(() => api.cancelDocument(j.id))}>
+                          <X />
+                        </IconAction>
+                      ) : (
+                        <IconAction label={t('documents.remove')} onClick={act(() => api.removeDocument(j.id))}>
+                          <Trash2 />
+                        </IconAction>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -159,6 +183,33 @@ export function DocumentsScreen() {
           </Table>
         )}
       </div>
+    </div>
+  )
+}
+
+function JobState({ job }: { job: api.DocumentJob }) {
+  const { t } = useTranslation()
+  if (job.status === 'error') {
+    const title = job.error ? t(`errors.${job.error.kind}.title`) : t('documents.status.error')
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge variant="destructive" className="max-w-full truncate">
+            {title}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">{job.error?.message || t(`errors.${job.error?.kind ?? 'service'}.hint`) || title}</TooltipContent>
+      </Tooltip>
+    )
+  }
+  if (job.status === 'done') return <Badge variant="secondary">{t('documents.status.done')}</Badge>
+  if (job.status === 'cancelled') return <Badge variant="outline">{t('documents.status.cancelled')}</Badge>
+  return (
+    <div className="space-y-1">
+      <span className="text-xs text-muted-foreground">
+        {t(`documents.status.${job.status}`)} · {job.progress}%
+      </span>
+      <Progress value={job.progress} className="h-1" />
     </div>
   )
 }

@@ -34,13 +34,38 @@
     "comingIn": "Arrives in {{milestone}}"
   },
   "errors": {
-    "missing_key": { "title": "No DeepL key", "hint": "Add a key in Settings." },
-    "invalid_key": { "title": "Invalid key", "hint": "Check the key in Settings." },
-    "quota_exceeded": { "title": "Quota reached", "hint": "This month's character limit is reached." },
-    "rate_limited": { "title": "Too many requests", "hint": "Wait a moment and retry." },
-    "network": { "title": "No network", "hint": "Check the internet connection." },
-    "invalid_request": { "title": "Invalid request", "hint": "" },
-    "service": { "title": "Service error", "hint": "" }
+    "missing_key": {
+      "title": "No DeepL key",
+      "hint": "Add a key in Settings."
+    },
+    "invalid_key": {
+      "title": "Invalid key",
+      "hint": "Check the key in Settings."
+    },
+    "quota_exceeded": {
+      "title": "Quota reached",
+      "hint": "This month's character limit is reached."
+    },
+    "rate_limited": {
+      "title": "Too many requests",
+      "hint": "Wait a moment and retry."
+    },
+    "network": {
+      "title": "No network",
+      "hint": "Check the internet connection."
+    },
+    "invalid_request": {
+      "title": "Invalid request",
+      "hint": ""
+    },
+    "service": {
+      "title": "Service error",
+      "hint": ""
+    },
+    "cancelled": {
+      "title": "Cancelled",
+      "hint": ""
+    }
   },
   "text": {
     "auto": "Detect language",
@@ -63,7 +88,6 @@
   "documents": {
     "drop": "Drop files here",
     "dropHint": "docx, pptx, xlsx, pdf, srt, md, txt",
-    "addSample": "Add sample file",
     "unsupported": "Unsupported file: {{name}}",
     "empty": "Queue is empty",
     "emptyHint": "Drop files to translate.",
@@ -82,8 +106,11 @@
       "translating": "Translating",
       "downloading": "Downloading",
       "done": "Done",
-      "error": "Error"
-    }
+      "error": "Error",
+      "cancelled": "Cancelled"
+    },
+    "add": "Add files",
+    "cancel": "Cancel"
   },
   "glossary": {
     "pair": "Language pair",
@@ -160,7 +187,8 @@
     "copy": "Copy translation",
     "screens": "Switch screens",
     "quick": "Quick translate (global)",
-    "quickWayland": "On Wayland, bind in the compositor: interpres-desktop --quick"
+    "quickWayland": "On Wayland, bind in the compositor: interpres-desktop --quick",
+    "addFiles": "Add files"
   },
   "palette": {
     "placeholder": "Search commands",

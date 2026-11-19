@@ -211,6 +211,7 @@ export function SettingsScreen() {
             ['shortcuts.translate', 'Ctrl Enter'],
             ['shortcuts.swap', 'Ctrl Shift S'],
             ['shortcuts.copy', 'Ctrl Shift C'],
+            ['shortcuts.addFiles', 'Ctrl O'],
             ['shortcuts.screens', 'Ctrl 1–5'],
             ['shortcuts.quick', 'Ctrl Alt T'],
           ].map(([label, combo]) => (
