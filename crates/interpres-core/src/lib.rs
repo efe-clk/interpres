@@ -3,6 +3,7 @@
 //! Everything here is independent of the UI and the process model so that the CLI,
 //! the desktop app and future daemon / MCP / overlay front-ends share one code path.
 
+pub mod documents;
 mod engine;
 mod error;
 pub mod secrets;
@@ -10,6 +11,7 @@ pub mod settings;
 mod translator;
 mod types;
 
+pub use documents::{DocumentEngine, DocumentQueue, DocumentRequest};
 pub use engine::{Engine, TextStream};
 pub use error::EngineError;
 pub use settings::{Settings, UiSettings};

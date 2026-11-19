@@ -19,12 +19,17 @@ pub enum EngineError {
     InvalidRequest(String),
     #[error("service error: {0}")]
     Service(String),
+    #[error("cancelled")]
+    Cancelled,
 }
 
 impl EngineError {
     /// Whether trying another engine could help. A malformed request will fail
     /// everywhere, so it is not worth falling back for.
     pub fn is_retryable_elsewhere(&self) -> bool {
-        !matches!(self, EngineError::InvalidRequest(_))
+        !matches!(
+            self,
+            EngineError::InvalidRequest(_) | EngineError::Cancelled
+        )
     }
 }
