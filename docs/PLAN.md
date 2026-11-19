@@ -81,7 +81,7 @@ Metin ekranı gerçek çeviri yapar; 900x600'de düzgün; Wayland ve X11'de aç�
 **Bitti:** Aynı metin ikinci kez ağa gitmeden gelir; sözlük terimi çeviriye uygulanır;
 geçmişten kayıt Metin ekranında açılır.
 
-## [ ] M7 — Paketleme + sürüm
+## [x] M7 — Paketleme + sürüm
 
 - Tauri bundler: AppImage, deb (Linux), NSIS (Windows). Uygulama ikonu.
 - Etiketle (`v*`) tetiklenen Actions iş akışı → GitHub Releases'a yükleme.
