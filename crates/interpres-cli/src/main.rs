@@ -6,8 +6,8 @@ use anyhow::{Context, Result, anyhow, bail};
 use clap::{Parser, Subcommand, ValueEnum};
 use interpres_core::documents::{DocProgress, unique_output_path};
 use interpres_core::{
-    DocumentEngine, DocumentRequest, EngineError, EngineId, Formality, Settings, TranslateRequest,
-    Translator, secrets,
+    DocumentEngine, DocumentRequest, EngineError, EngineId, Formality, Settings, Store,
+    TranslateRequest, Translator, secrets,
 };
 use interpres_engine_deepl::DeeplEngine;
 
@@ -51,6 +51,23 @@ enum Command {
         #[arg(required = true)]
         files: Vec<PathBuf>,
     },
+    /// Manage glossary terms. A glossary applies when the source language is given.
+    Glossary {
+        #[command(subcommand)]
+        action: GlossaryAction,
+    },
+    /// List past translations, newest first.
+    History {
+        /// Only entries containing this text.
+        query: Option<String>,
+        #[arg(short = 'n', long, default_value_t = 20)]
+        limit: usize,
+    },
+    /// Manage the translation cache.
+    Cache {
+        #[command(subcommand)]
+        action: CacheAction,
+    },
     /// Manage API keys in the OS credential store.
     Key {
         #[command(subcommand)]
@@ -58,6 +75,57 @@ enum Command {
     },
     /// Show DeepL character usage for the current period.
     Usage,
+}
+
+/// Language pair of a glossary, e.g. `--from tr --to en`.
+#[derive(clap::Args)]
+struct Pair {
+    #[arg(short, long, value_parser = lang_code)]
+    from: String,
+    #[arg(short, long, value_parser = lang_code)]
+    to: String,
+}
+
+#[derive(Subcommand)]
+enum GlossaryAction {
+    /// List language pairs that have terms.
+    List,
+    /// Show the terms of a pair.
+    Show {
+        #[command(flatten)]
+        pair: Pair,
+    },
+    /// Add or replace a term.
+    Add {
+        #[command(flatten)]
+        pair: Pair,
+        source: String,
+        target: String,
+    },
+    /// Remove a term by its source text.
+    Remove {
+        #[command(flatten)]
+        pair: Pair,
+        source: String,
+    },
+    /// Import `source,target` rows from a CSV file.
+    Import {
+        #[command(flatten)]
+        pair: Pair,
+        file: PathBuf,
+    },
+    /// Export terms as CSV to a file, or to stdout.
+    Export {
+        #[command(flatten)]
+        pair: Pair,
+        file: Option<PathBuf>,
+    },
+}
+
+#[derive(Subcommand)]
+enum CacheAction {
+    /// Delete all cached translations.
+    Clear,
 }
 
 #[derive(Subcommand)]
@@ -138,6 +206,15 @@ async fn main() -> Result<()> {
             eprintln!("Key deleted.");
             Ok(())
         }
+        Command::Glossary { action } => glossary(action),
+        Command::History { query, limit } => history(query, limit),
+        Command::Cache {
+            action: CacheAction::Clear,
+        } => {
+            store()?.cache_clear()?;
+            eprintln!("Cache cleared.");
+            Ok(())
+        }
         Command::Usage => {
             let u = deepl()?.usage().await.map_err(explain)?;
             println!("{} / {} characters", u.character_count, u.character_limit);
@@ -169,12 +246,13 @@ async fn translate(
         bail!("nothing to translate");
     }
 
-    let translator = Translator::new(Arc::new(deepl()?), None);
+    let translator = Translator::new(Arc::new(deepl()?), None).with_store(Arc::new(store()?));
     let req = TranslateRequest {
         text,
         source: from.or(settings.source_lang),
         target,
         formality,
+        glossary: None,
     };
     let t = translator.translate(&req).await.map_err(explain)?;
     println!("{}", t.text.trim_end());
@@ -192,11 +270,17 @@ async fn doc(
         bail!("--out works with a single input file");
     }
     let settings = Settings::load(&Settings::default_path()?)?;
+    let target = to
+        .or(settings.target_lang)
+        .ok_or_else(|| anyhow!("no target language; pass --to, e.g. --to EN-US"))?;
+    let source = from.or(settings.source_lang);
     let req = DocumentRequest {
-        source: from.or(settings.source_lang),
-        target: to
-            .or(settings.target_lang)
-            .ok_or_else(|| anyhow!("no target language; pass --to, e.g. --to EN-US"))?,
+        glossary: match &source {
+            Some(src) => store()?.glossary(src, &target)?,
+            None => None,
+        },
+        source,
+        target,
         formality,
     };
     let engine = deepl()?;
@@ -238,6 +322,75 @@ async fn doc(
 /// DeepL codes are upper case (`en-us` → `EN-US`).
 fn lang_code(s: &str) -> Result<String, String> {
     Ok(s.to_uppercase())
+}
+
+fn store() -> Result<Store> {
+    Ok(Store::open(&Store::default_path()?)?)
+}
+
+fn glossary(action: GlossaryAction) -> Result<()> {
+    let store = store()?;
+    match action {
+        GlossaryAction::List => {
+            for p in store.glossary_pairs()? {
+                println!(
+                    "{} -> {}  ({} terms)",
+                    p.source_lang, p.target_lang, p.count
+                );
+            }
+        }
+        GlossaryAction::Show { pair } => {
+            for t in store.glossary_terms(&pair.from, &pair.to)? {
+                println!("{}\t{}", t.source, t.target);
+            }
+        }
+        GlossaryAction::Add {
+            pair,
+            source,
+            target,
+        } => {
+            store.upsert_term(None, &pair.from, &pair.to, &source, &target)?;
+        }
+        GlossaryAction::Remove { pair, source } => {
+            let term = store
+                .glossary_terms(&pair.from, &pair.to)?
+                .into_iter()
+                .find(|t| t.source == source)
+                .ok_or_else(|| anyhow!("no such term: {source}"))?;
+            store.delete_term(term.id)?;
+        }
+        GlossaryAction::Import { pair, file } => {
+            let f = std::fs::File::open(&file)
+                .with_context(|| format!("could not open {}", file.display()))?;
+            let n = store.import_csv(&pair.from, &pair.to, f)?;
+            eprintln!("{n} terms imported.");
+        }
+        GlossaryAction::Export { pair, file } => {
+            let n = match file {
+                Some(path) => {
+                    let f = std::fs::File::create(&path)
+                        .with_context(|| format!("could not create {}", path.display()))?;
+                    store.export_csv(&pair.from, &pair.to, f)?
+                }
+                None => store.export_csv(&pair.from, &pair.to, std::io::stdout())?,
+            };
+            eprintln!("{n} terms exported.");
+        }
+    }
+    Ok(())
+}
+
+fn history(query: Option<String>, limit: usize) -> Result<()> {
+    for h in store()?.history(query.as_deref().unwrap_or(""), limit)? {
+        let src = h
+            .source_lang
+            .or(h.detected_source)
+            .unwrap_or_else(|| "?".into());
+        println!("{} -> {} [{}]", src, h.target_lang, h.engine);
+        println!("  {}", h.source_text.replace('\n', " "));
+        println!("  {}", h.target_text.replace('\n', " "));
+    }
+    Ok(())
 }
 
 fn deepl() -> Result<DeeplEngine> {
