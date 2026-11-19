@@ -1,13 +1,12 @@
 [workspace]
 resolver = "3"
-members = ["crates/*"]
+members = ["crates/*", "apps/desktop/src-tauri"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
 license = "AGPL-3.0-only"
 repository = "https://github.com/efe-clk/interpres"
-rust-version = "1.88"
 
 [workspace.dependencies]
 interpres-core = { path = "crates/interpres-core" }
@@ -29,3 +28,9 @@ toml = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 wiremock = "0.6"
+tauri = "2"
+tauri-build = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-single-instance = "2"

@@ -12,7 +12,7 @@ mod types;
 
 pub use engine::{Engine, TextStream};
 pub use error::EngineError;
-pub use settings::Settings;
+pub use settings::{Settings, UiSettings};
 pub use translator::Translator;
 pub use types::{
     Capabilities, EngineId, Formality, Language, LanguageKind, TranslateRequest, Translation,

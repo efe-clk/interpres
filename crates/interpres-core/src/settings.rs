@@ -14,6 +14,26 @@ pub struct Settings {
     /// `None` means auto-detect.
     pub source_lang: Option<String>,
     pub target_lang: Option<String>,
+    pub ui: UiSettings,
+}
+
+/// Preferences of graphical front-ends.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct UiSettings {
+    /// `dark` or `light`.
+    pub theme: String,
+    /// Interface language, e.g. `tr` or `en`.
+    pub language: String,
+}
+
+impl Default for UiSettings {
+    fn default() -> Self {
+        Self {
+            theme: "dark".into(),
+            language: "tr".into(),
+        }
+    }
 }
 
 impl Default for Settings {
@@ -23,6 +43,7 @@ impl Default for Settings {
             fallback_engine: None,
             source_lang: None,
             target_lang: None,
+            ui: UiSettings::default(),
         }
     }
 }
@@ -104,6 +125,10 @@ mod tests {
             fallback_engine: Some(EngineId::Deepl),
             source_lang: None,
             target_lang: Some("EN-US".into()),
+            ui: UiSettings {
+                theme: "light".into(),
+                language: "en".into(),
+            },
         };
         s.save(&p).unwrap();
         assert_eq!(Settings::load(&p).unwrap(), s);
@@ -115,5 +140,6 @@ mod tests {
         let s: Settings = toml::from_str("target_lang = \"DE\"").unwrap();
         assert_eq!(s.engine, EngineId::Deepl);
         assert_eq!(s.target_lang.as_deref(), Some("DE"));
+        assert_eq!(s.ui.theme, "dark");
     }
 }
