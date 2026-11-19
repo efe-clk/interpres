@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -63,7 +63,7 @@ async fn mock_statuses(server: &MockServer, bodies: &[serde_json::Value]) {
     }
 }
 
-fn input(dir: &PathBuf) -> PathBuf {
+fn input(dir: &Path) -> PathBuf {
     let p = dir.join("rapor.txt");
     std::fs::write(&p, "Merhaba dünya").unwrap();
     p
