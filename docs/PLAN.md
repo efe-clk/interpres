@@ -22,7 +22,7 @@ Her aşamanın ortak "bitti" ölçütü (aşağıdakilere ek olarak):
 
 **Bitti:** `cargo run -p interpres-cli -- --version` sürüm yazar; CI iki platformda yeşil.
 
-## [ ] M1 — Core + DeepL metin çevirisi + CLI
+## [x] M1 — Core + DeepL metin çevirisi + CLI
 
 - core: `Lang`, `Formality`, `TranslateRequest`, `Translation`, `Chunk`, `EngineId`,
   `EngineError` (anahtar yok / kota / ağ / geçersiz istek ayrımı).
