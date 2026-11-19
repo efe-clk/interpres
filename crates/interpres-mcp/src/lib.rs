@@ -25,6 +25,8 @@ pub type EngineFactory = Arc<dyn Fn() -> Result<DeeplEngine, EngineError> + Send
 pub struct InterpresMcp {
     store: Arc<Store>,
     engine: EngineFactory,
+    /// Send documents to a running daemon (off in tests).
+    use_daemon: bool,
     #[allow(dead_code, reason = "used by the tool_handler macro")]
     tool_router: ToolRouter<Self>,
 }
@@ -125,8 +127,15 @@ impl InterpresMcp {
         Self {
             store,
             engine,
+            use_daemon: true,
             tool_router: Self::tool_router(),
         }
+    }
+
+    /// Whether documents go to a running `interpres-daemon` (default: true).
+    pub fn with_daemon(mut self, use_daemon: bool) -> Self {
+        self.use_daemon = use_daemon;
+        self
     }
 
     #[tool(
@@ -189,16 +198,32 @@ impl InterpresMcp {
             },
             None => None,
         };
-        let output = a
-            .output_path
-            .map(PathBuf::from)
-            .unwrap_or_else(|| unique_output_path(&input, &target));
         let req = DocumentRequest {
             source,
             target,
             formality: Formality::Default,
             glossary,
         };
+        // With a running daemon the job joins the shared queue (and shows up in the
+        // desktop app). An explicit output path always runs here.
+        if a.output_path.is_none()
+            && self.use_daemon
+            && let Some(daemon) = interpres_daemon::try_connect().await
+        {
+            let input = match std::fs::canonicalize(&input) {
+                Ok(p) => p,
+                Err(e) => return fail(e.to_string()),
+            };
+            return match daemon.translate_document(&input, req, false, |_| {}).await {
+                Ok(out) => ok(out.display().to_string()),
+                Err(interpres_daemon::ClientError::Engine(e)) => engine_error(e),
+                Err(e) => fail(e.to_string()),
+            };
+        }
+        let output = a
+            .output_path
+            .map(PathBuf::from)
+            .unwrap_or_else(|| unique_output_path(&input, &req.target));
         match engine
             .translate_document(&input, &output, &req, &|_| {}, &CancellationToken::new())
             .await

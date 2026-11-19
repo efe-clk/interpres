@@ -7,11 +7,13 @@ use std::sync::Arc;
 use interpres_core::documents::DocumentJob;
 use interpres_core::store::{GlossaryPair, HistoryEntry, TermRow};
 use interpres_core::{
-    DocumentQueue, DocumentRequest, Engine, EngineError, EngineId, Language, LanguageKind,
-    Settings, Store, TranslateRequest, Translation, Translator, secrets,
+    DocumentRequest, Engine, EngineError, EngineId, Language, LanguageKind, Settings, Store,
+    TranslateRequest, Translation, Translator, secrets,
 };
 use interpres_engine_deepl::{DeeplEngine, Usage};
 use serde::Serialize;
+
+use crate::documents::Documents;
 use tauri::State;
 
 type CmdResult<T> = Result<T, EngineError>;
@@ -99,58 +101,39 @@ pub fn save_settings(app: tauri::AppHandle, settings: Settings) -> CmdResult<()>
 }
 
 #[tauri::command]
-pub fn documents_list(queue: State<'_, DocumentQueue>) -> Vec<DocumentJob> {
-    queue.jobs()
+pub async fn documents_list(docs: State<'_, Arc<Documents>>) -> CmdResult<Vec<DocumentJob>> {
+    docs.list().await
 }
 
 #[tauri::command]
-pub fn documents_add(
-    queue: State<'_, DocumentQueue>,
-    store: State<'_, Arc<Store>>,
+pub async fn documents_add(
+    docs: State<'_, Arc<Documents>>,
     paths: Vec<PathBuf>,
     engine: EngineId,
-    mut request: DocumentRequest,
+    request: DocumentRequest,
     use_glossary: bool,
 ) -> CmdResult<Vec<u64>> {
-    // Glossaries need an explicit source language.
-    if use_glossary && let Some(src) = &request.source {
-        request.glossary = store.glossary(src, &request.target).map_err(internal)?;
-    }
-    let label = request
-        .glossary
-        .as_ref()
-        .map(|g| format!("{} → {}", g.source_lang, g.target_lang));
-    Ok(paths
-        .into_iter()
-        .map(|p| queue.add(p, engine, request.clone(), label.clone()))
-        .collect())
+    docs.add(paths, engine, request, use_glossary).await
 }
 
 #[tauri::command]
-pub fn documents_cancel(queue: State<'_, DocumentQueue>, id: u64) {
-    queue.cancel(id)
+pub async fn documents_cancel(docs: State<'_, Arc<Documents>>, id: u64) -> CmdResult<()> {
+    docs.cancel(id).await
 }
 
 #[tauri::command]
-pub fn documents_remove(queue: State<'_, DocumentQueue>, id: u64) {
-    queue.remove(id)
-}
-
-fn output_of(queue: &DocumentQueue, id: u64) -> CmdResult<PathBuf> {
-    queue
-        .job(id)
-        .and_then(|j| j.output)
-        .ok_or_else(|| EngineError::InvalidRequest("document is not translated yet".into()))
+pub async fn documents_remove(docs: State<'_, Arc<Documents>>, id: u64) -> CmdResult<()> {
+    docs.remove(id).await
 }
 
 #[tauri::command]
-pub fn documents_reveal(queue: State<'_, DocumentQueue>, id: u64) -> CmdResult<()> {
-    tauri_plugin_opener::reveal_item_in_dir(output_of(&queue, id)?).map_err(internal)
+pub async fn documents_reveal(docs: State<'_, Arc<Documents>>, id: u64) -> CmdResult<()> {
+    tauri_plugin_opener::reveal_item_in_dir(docs.output(id).await?).map_err(internal)
 }
 
 #[tauri::command]
-pub fn documents_open(queue: State<'_, DocumentQueue>, id: u64) -> CmdResult<()> {
-    tauri_plugin_opener::open_path(output_of(&queue, id)?, None::<&str>).map_err(internal)
+pub async fn documents_open(docs: State<'_, Arc<Documents>>, id: u64) -> CmdResult<()> {
+    tauri_plugin_opener::open_path(docs.output(id).await?, None::<&str>).map_err(internal)
 }
 
 // ---------- Glossary ----------

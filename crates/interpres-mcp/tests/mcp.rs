@@ -32,7 +32,10 @@ async fn connect(
     });
     let (client_io, server_io) = tokio::io::duplex(64 * 1024);
     tokio::spawn(async move {
-        let server = InterpresMcp::new(store, engine).serve(server_io).await?;
+        let server = InterpresMcp::new(store, engine)
+            .with_daemon(false)
+            .serve(server_io)
+            .await?;
         server.waiting().await?;
         anyhow::Ok(())
     });

@@ -285,6 +285,12 @@ async fn doc(
     };
     let engine = deepl()?;
     let cancel = tokio_util::sync::CancellationToken::new();
+    // With a running daemon the job joins the shared queue (and shows up in the
+    // desktop app). --out picks the output path, so it always runs here.
+    let daemon = match out {
+        None => interpres_daemon::try_connect().await,
+        Some(_) => None,
+    };
 
     for input in files {
         let ext = input
@@ -293,6 +299,25 @@ async fn doc(
             .unwrap_or_default();
         if !engine.supports(&ext) {
             bail!("unsupported file type: {}", input.display());
+        }
+        if let Some(daemon) = &daemon {
+            let input = std::fs::canonicalize(&input)
+                .with_context(|| format!("could not open {}", input.display()))?;
+            let name = input.display().to_string();
+            let last = std::cell::Cell::new(None);
+            let output = daemon
+                .translate_document(&input, req.clone(), false, |job| {
+                    if last.replace(Some(job.status)) != Some(job.status) {
+                        eprintln!("{name}: {:?} (daemon)", job.status);
+                    }
+                })
+                .await
+                .map_err(|e| match e {
+                    interpres_daemon::ClientError::Engine(e) => explain(e),
+                    other => anyhow!(other),
+                })?;
+            println!("{}", output.display());
+            continue;
         }
         let output = out
             .clone()

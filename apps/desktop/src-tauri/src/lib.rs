@@ -1,6 +1,7 @@
 //! Tauri shell. Thin layer: every command delegates to interpres-core and the engines.
 
 mod commands;
+mod documents;
 
 use std::sync::Arc;
 
@@ -52,8 +53,9 @@ pub fn run() {
             } else if let Some(w) = app.get_webview_window("main") {
                 let _ = w.show();
             }
-            app.manage(Arc::new(open_store()));
-            start_document_queue(app.handle());
+            let store = Arc::new(open_store());
+            app.manage(store.clone());
+            start_document_queue(app.handle(), store);
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -162,17 +164,24 @@ fn document_engine(engine: EngineId) -> Result<Arc<dyn DocumentEngine>, EngineEr
     }
 }
 
-/// Starts the queue worker and forwards every change to the UI as `documents-changed`.
-fn start_document_queue(app: &AppHandle) {
+/// Starts the local queue, then switches to a running daemon's queue if there is one.
+/// Every change is forwarded to the UI as `documents-changed`.
+fn start_document_queue(app: &AppHandle, store: Arc<Store>) {
     let (queue, worker) = DocumentQueue::new(Box::new(document_engine));
     let mut rx = queue.subscribe();
-    app.manage(queue);
+    let docs = Arc::new(documents::Documents::new(queue, store, app.clone()));
+    app.manage(docs.clone());
     tauri::async_runtime::spawn(worker);
-    let app = app.clone();
+    let handle = app.clone();
     tauri::async_runtime::spawn(async move {
         while rx.changed().await.is_ok() {
             let jobs = rx.borrow_and_update().clone();
-            let _ = app.emit("documents-changed", jobs);
+            let _ = handle.emit(documents::EVENT, jobs);
+        }
+    });
+    tauri::async_runtime::spawn(async move {
+        if let Some(client) = interpres_daemon::try_connect().await {
+            docs.attach(client).await;
         }
     });
 }
