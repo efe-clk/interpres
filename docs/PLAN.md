@@ -92,13 +92,96 @@ temiz bir makinede kurulup çalışır.
 
 ---
 
-## Ertelendi: Claude (M5, M6)
+## Yol haritası (v0.1 sonrası)
 
-Kullanıcı kararıyla (2026-11-19) Claude motoru ve Claude yolu için belge hattı ertelendi.
-Boş `interpres-engine-claude` crate'i ve `claude` özelliği duruyor; arayüzde Claude
-seçenekleri gizli. Geri alınırken aşağıdaki plan kullanılır.
+Sıra: önce açık kalan işler, sonra çekirdeği dışarı açan servisler (MCP, daemon), sonra
+en büyük iş olan oyun katmanı, sonra platformlar. Claude en sonda (kullanıcı kararı,
+2026-11-20). Her aşamanın başında, o aşamadaki açık karar soruları kullanıcıya sorulur.
 
-### M5 — Claude motoru + yedeğe düşme
+## [ ] M8 — v0.2: Açık işler ve cila
+
+- Hyprland: hızlı çeviri için kısayol (`interpres-desktop --quick`) ve `Interpres Quick`
+  penceresini küçük/yüzer açan pencere kuralı. Kullanıcının ayar dosyasına dokunmadan önce
+  onay alınır.
+- Kısayolların Ayarlar'dan değiştirilebilmesi (ilk planda istenmişti, şu an salt okunur);
+  küresel hızlı çeviri kısayolu da dâhil.
+- Bir dil çiftinin bütün terimleri silinince DeepL'deki sözlüğün de silinmesi.
+- Belgeler ekranında arayüzden dosya ekleme akışının uçtan uca doğrulanması (kullanıcı
+  denemesi; gerekirse düzeltme).
+- Windows kurulumunun gerçek bir Windows makinesinde denenmesi (makine varsa).
+
+**Bitti:** Hyprland'de kısayol hızlı çeviriyi küçük yüzer pencerede açar; kısayollar
+Ayarlar'dan değişir ve kalıcıdır; boşalan çiftin DeepL sözlüğü silinir; `v0.2.0` yayımlanır.
+
+## [ ] M9 — v0.3: MCP sunucusu
+
+- `crates/interpres-mcp`: `rmcp` ile stdio MCP sunucusu; `interpres-mcp` ikilisi.
+- Araçlar: `translate_text`, `translate_document` (yol alır, çıktı yolunu döndürür),
+  `glossary_list` / `glossary_add` / `glossary_remove`, `history_search`, `usage`.
+- Çekirdekteki `Translator`, `DocumentEngine` ve `Store` doğrudan kullanılır; anahtar
+  keyring'den okunur.
+- Testler: araç çağrıları sahte DeepL (wiremock) ile; MCP el sıkışması ve araç listesi.
+- Kurulum notu: Claude Desktop / Claude Code gibi istemcilere nasıl ekleneceği README'de.
+
+**Bitti:** Bir MCP istemcisi Interpres'i ekleyip metin ve belge çevirebilir; ikili sürüme
+eklenir; `v0.3.0` yayımlanır.
+
+## [ ] M10 — v0.4: Daemon (IPC servisi)
+
+- `crates/interpres-daemon`: arka planda çalışan tek süreç; kuyruk, önbellek ve sözlük
+  burada yaşar.
+- IPC: Linux'ta Unix soketi, Windows'ta adlandırılmış boru (named pipe); JSON-RPC benzeri
+  istek/yanıt + olay akışı (kuyruk değişiklikleri).
+- Masaüstü uygulaması, CLI ve MCP sunucusu daemon varsa ona bağlanır, yoksa bugünkü gibi
+  doğrudan çalışır.
+- Testler: istemci-sunucu gidiş-dönüş, iki istemcinin aynı kuyruğu görmesi, daemon
+  kapanınca doğrudan çalışmaya geçiş.
+
+**Bitti:** CLI'dan eklenen belge masaüstü uygulamasının kuyruğunda görünür; daemon yokken
+her şey bugünkü gibi çalışır; `v0.4.0` yayımlanır.
+
+## [ ] M11 — v2.0: Oyun katmanı (ekran yakalama + OCR + katman)
+
+- `crates/interpres-overlay`. Yalnızca ekran yakalama + OCR + katman; oyun belleğine
+  kanca atılmaz (hook/inject yok).
+- Yakalama: Linux'ta xdg-desktop-portal ScreenCast (Wayland) ve X11; Windows'ta
+  Windows.Graphics.Capture.
+- OCR: motor seçimi bu aşamanın başında kararlaştırılır (ör. Tesseract, Windows OCR,
+  ONNX tabanlı model).
+- Katman: seçilen bölgenin üstünde, tıklamaları geçiren şeffaf pencere; çeviri satırları
+  yerinde ya da kenarda gösterilir.
+- Akış: kısayolla bölge seç → periyodik yakala → metin değiştiyse çevir (önbellek, daemon
+  üzerinden) → katmanı güncelle.
+- Testler: kayıtlı ekran görüntülerinden OCR + çeviri hattı (ağsız, sahte motorla).
+
+**Bitti:** Hyprland'de ve Windows'ta pencereli bir oyunun altyazısı seçilen bölgeden
+okunup çevrilir ve katmanda gösterilir; `v2.0.0` yayımlanır.
+
+## [ ] M12 — macOS
+
+- CI'ya macOS derlemesi; `.dmg` paketi; keyring Keychain ile.
+- İmzalama ve notarization için Apple geliştirici hesabı gerekir; bu aşamanın başında
+  sorulur. Hesap yoksa imzasız paket.
+- Oyun katmanının macOS desteği (ScreenCaptureKit + Vision OCR) ayrıca değerlendirilir.
+
+**Bitti:** macOS'ta uygulama ve CLI kurulup çalışır; paket sürüme eklenir.
+
+## [ ] M13 — Android
+
+- Tauri mobile ile Android derlemesi; dar ekran için arayüz düzeni (alt sekme çubuğu).
+- Metin ve belge çevirisi, sözlük, geçmiş; anahtar Android keystore'da.
+- Dağıtım yolu (APK / Play Store) bu aşamanın başında sorulur.
+
+**Bitti:** APK bir Android cihazda kurulur, metin ve belge çevirir.
+
+## [ ] M14 — Claude (en son)
+
+Kullanıcı kararıyla ertelendi (2026-11-19) ve en sona alındı (2026-11-20). Boş
+`interpres-engine-claude` crate'i ve `claude` özelliği duruyor; arayüzde Claude seçenekleri
+gizli. Başlarken model listesi ve API ayrıntıları güncel belgelerden doğrulanır; çeviri
+belleği Claude'a bağlam olarak verilir.
+
+#### M5 — Claude motoru + yedeğe düşme
 
 - `interpres-engine-claude`, `claude` özelliği arkasında.
 - Claude API: reqwest ile Messages API; SSE akışı; prompt caching (sistem talimatı ve
@@ -114,7 +197,7 @@ seçenekleri gizli. Geri alınırken aşağıdaki plan kullanılır.
 **Bitti:** `--features claude` ile Claude API ve Claude Code çeviri yapar; özellik kapalıyken
 Claude kodu ikilide yok; Claude kapatılınca çeviri DeepL'den gelir.
 
-### M6 — Claude yolu için belge işleme hattı
+#### M6 — Claude yolu için belge işleme hattı
 
 - `interpres-docs`: docx, pptx, xlsx (zip + quick-xml), srt, md, txt.
 - Run'lar korunarak metin parçaları çıkarılır, işaretli segmentler hâlinde çevrilir,
@@ -125,13 +208,6 @@ Claude kodu ikilide yok; Claude kapatılınca çeviri DeepL'den gelir.
 
 **Bitti:** Örnek docx/pptx/xlsx/srt/md Claude ile çevrilir, Word/LibreOffice'te biçimi
 bozulmadan açılır, hiçbir segment atlanmaz.
-
-## Sonrası (v2+)
-
-- `interpres-mcp`: rmcp ile MCP sunucusu (Translator servisini sunar).
-- `interpres-daemon`: IPC servisi; masaüstü, CLI ve MCP aynı süreci paylaşabilir.
-- `interpres-overlay`: ekran yakalama + OCR + katman (hook/inject yok).
-- macOS, Android.
 
 ## Notlar ve riskler
 
