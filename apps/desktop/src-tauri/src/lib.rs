@@ -45,8 +45,12 @@ pub fn run() {
                 .map(|s| s.ui.shortcuts)
                 .unwrap_or_default();
             register_quick_shortcut(app.handle(), &shortcuts.quick);
+            // Started for quick translate only: keep the main window hidden and stay
+            // in the background so the next shortcut press opens instantly.
             if std::env::args().any(|a| a == QUICK_FLAG) {
                 show_quick(app.handle());
+            } else if let Some(w) = app.get_webview_window("main") {
+                let _ = w.show();
             }
             app.manage(Arc::new(open_store()));
             start_document_queue(app.handle());

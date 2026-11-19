@@ -132,6 +132,9 @@ npm --prefix apps/desktop run tauri dev
 - Wayland'de küresel kısayol çalışmaz; hızlı çeviri derleyici kısayolundan
   `interpres-desktop --quick` ile açılır (single-instance eklentisi pencereyi gösterir).
 - Hızlı çeviri penceresinin başlığı `Interpres Quick`; pencere kuralları buna göre yazılır.
+  `--quick` ile başlatılınca ana pencere gizli kalır, uygulama arka planda bekler.
+- Kullanıcının Hyprland'inde Super+Q → `~/.local/bin/interpres-desktop --quick` (o.rebind;
+  eskiden pencere kapatmaydı, Super+W hâlâ kapatır) ve `Interpres Quick` için yüzer 560x320 kural.
 - Arayüz sahte veriyle tarayıcıda da açılır: `npm --prefix apps/desktop run dev`.
 
 Bir aşama ancak `cargo build`, `cargo test`, `cargo clippy` (ve arayüz aşamalarında
