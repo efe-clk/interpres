@@ -15,10 +15,28 @@ metni çevirir. Motor: DeepL. (Claude desteği ertelendi.)
 |---|---|
 | Linux | `Interpres_<sürüm>_amd64.AppImage` (çalıştırılabilir yapın) veya `.deb` |
 | Windows | `Interpres_<sürüm>_x64-setup.exe` |
-| CLI | `interpres-cli-<sürüm>-x86_64-linux.tar.gz` / `-windows.zip` |
+| CLI ve MCP | `interpres-cli-<sürüm>-x86_64-linux.tar.gz` / `-windows.zip` |
 
 İlk açılışta Ayarlar'dan DeepL API anahtarını girin. Wayland'de hızlı çeviri için
 derleyicide bir kısayolu `interpres-desktop --quick` komutuna bağlayın.
+
+### MCP sunucusu
+
+`interpres-mcp`, Interpres'i MCP istemcilerine açar: metin ve belge çevirisi, sözlük,
+geçmiş ve kullanım. DeepL anahtarı uygulamadaki veya `interpres key set deepl` ile
+kaydedilen anahtardır.
+
+Claude Code:
+
+```sh
+claude mcp add interpres -- /tam/yol/interpres-mcp
+```
+
+Claude Desktop ve diğer istemciler (`mcpServers` ayarı):
+
+```json
+{ "mcpServers": { "interpres": { "command": "/tam/yol/interpres-mcp" } } }
+```
 
 Yeni sürüm: `vX.Y.Z` etiketi gönderilince GitHub Actions paketleri derleyip yayımlar.
 
@@ -40,6 +58,7 @@ cargo run -p interpres-cli -- --version
 | `crates/interpres-engine-claude` | Claude motoru (ertelendi, boş) |
 | `crates/interpres-docs` | Belge ayrıştırma ve yeniden birleştirme |
 | `crates/interpres-cli` | `interpres` komut satırı aracı |
+| `crates/interpres-mcp` | `interpres-mcp` MCP sunucusu (stdio) |
 | `apps/desktop` | Tauri v2 masaüstü uygulaması |
 
 ## Lisans

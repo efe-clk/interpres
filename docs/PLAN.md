@@ -119,7 +119,7 @@ Ayarlar'dan değişir ve kalıcıdır; boşalan çiftin DeepL sözlüğü silini
 > Not: Super+Q seçildi (o.rebind; pencere kapatma Super+W'de). Fiziksel tuş basışı,
 > arayüzden dosya ekleme ve Windows denemesi kullanıcıda.
 
-## [ ] M9 — v0.3: MCP sunucusu
+## [x] M9 — v0.3: MCP sunucusu
 
 - `crates/interpres-mcp`: `rmcp` ile stdio MCP sunucusu; `interpres-mcp` ikilisi.
 - Araçlar: `translate_text`, `translate_document` (yol alır, çıktı yolunu döndürür),

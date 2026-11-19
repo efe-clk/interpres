@@ -66,15 +66,15 @@ jobs:
         with:
           projectPath: apps/desktop
           releaseId: ${{ needs.create.outputs.release_id }}
-      - name: Build CLI
-        run: cargo build --release --locked -p interpres-cli
+      - name: Build CLI and MCP server
+        run: cargo build --release --locked -p interpres-cli -p interpres-mcp
       - name: Package CLI (Linux)
         if: runner.os == 'Linux'
-        run: tar -czf "${{ matrix.cli_name }}" -C target/release interpres -C "$GITHUB_WORKSPACE" LICENSE
+        run: tar -czf "${{ matrix.cli_name }}" -C target/release interpres interpres-mcp -C "$GITHUB_WORKSPACE" LICENSE
       - name: Package CLI (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path target/release/interpres.exe, LICENSE -DestinationPath "${{ matrix.cli_name }}"
+        run: Compress-Archive -Path target/release/interpres.exe, target/release/interpres-mcp.exe, LICENSE -DestinationPath "${{ matrix.cli_name }}"
       - name: Upload CLI
         shell: bash
         env:

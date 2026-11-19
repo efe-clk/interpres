@@ -76,13 +76,14 @@ crates/
   interpres-engine-claude/      # Claude API + Claude Code (feature: claude)
   interpres-docs/               # belge ayrıştırma / yeniden birleştirme
   interpres-cli/                # `interpres` komut satırı aracı
+  interpres-mcp/                # `interpres-mcp` stdio MCP sunucusu (rmcp)
 apps/
   desktop/                      # Tauri v2 (src/ = React, src-tauri/ = Rust)
 docs/
   PLAN.md
 ```
 
-Sonraki sürümler: `interpres-daemon` (IPC), `interpres-mcp` (rmcp), `interpres-overlay`.
+Sonraki sürümler: `interpres-daemon` (IPC), `interpres-overlay`.
 Bu yüzden:
 
 - İş mantığı yalnızca `interpres-core` ve motor crate'lerinde durur. CLI, Tauri, daemon ve
