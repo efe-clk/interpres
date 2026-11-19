@@ -9,8 +9,7 @@
   "engine": {
     "deepl": "DeepL",
     "claude-api": "Claude API",
-    "claude-code": "Claude Code",
-    "unavailable": "Not in this version"
+    "claude-code": "Claude Code"
   },
   "status": {
     "free": "Free",
@@ -30,8 +29,7 @@
     "search": "Search",
     "close": "Close",
     "retry": "Retry",
-    "goToSettings": "Open settings",
-    "comingIn": "Arrives in {{milestone}}"
+    "goToSettings": "Open settings"
   },
   "errors": {
     "missing_key": {
@@ -147,20 +145,6 @@
       "saved": "Key stored ({{plan}})",
       "remove": "Remove key",
       "usage": "Usage: {{used}} / {{limit}} characters"
-    },
-    "claude": {
-      "title": "Claude",
-      "apiKey": "Claude API key",
-      "model": "Model",
-      "code": "Claude Code",
-      "codeFound": "\"claude\" command found",
-      "codeNotFound": "\"claude\" command not found"
-    },
-    "engines": {
-      "title": "Engines",
-      "default": "Default engine",
-      "fallback": "Fallback engine",
-      "none": "None"
     },
     "languages": {
       "title": "Default languages",

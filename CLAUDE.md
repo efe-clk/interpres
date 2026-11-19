@@ -34,7 +34,8 @@ Kullanıcı kod bilmiyor. Kodu Claude yazar; derleme, test ve arayüz kontrolün
   - Terim sözlükleri: glossary API.
   - Anahtar `:fx` ile bitiyorsa `https://api-free.deepl.com`, değilse `https://api.deepl.com`.
   - Kimlik doğrulama `Authorization: DeepL-Auth-Key <key>` başlığıyla.
-- **Claude (isteğe bağlı)**: `claude` Cargo özelliği arkasında. Özellik kapalıyken Claude
+- **Claude (isteğe bağlı, ERTELENDİ)**: M5 ve M6 ertelendi (bkz. `docs/PLAN.md`); arayüzde
+  Claude seçenekleri gizli, crate boş. Geri alınınca: `claude` Cargo özelliği arkasında. Özellik kapalıyken Claude
   kodu derlemeye hiç girmez (`#[cfg(feature = "claude")]`, crate opsiyonel bağımlılık).
   - a) Claude API: reqwest ile ince Messages API istemcisi (resmi Rust SDK yok).
     SSE akışı, prompt caching, ayardan seçilen model.

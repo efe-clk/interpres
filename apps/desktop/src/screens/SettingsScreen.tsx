@@ -1,7 +1,7 @@
-import { Check, Terminal } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ENGINES, EngineSelect, LanguageSelect, isEngineAvailable } from '@/components/common/selects'
+import { LanguageSelect } from '@/components/common/selects'
 import { ErrorNotice, Kbd } from '@/components/common/states'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,8 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import * as api from '@/lib/api'
 import { useApp } from '@/lib/app-context'
 
-const NONE = '__none'
-const CLAUDE_MODELS = ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5']
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -38,12 +36,8 @@ export function SettingsScreen() {
   const [verifying, setVerifying] = useState(false)
   const [keyError, setKeyError] = useState<api.ApiError | null>(null)
   const [usage, setUsage] = useState<api.Usage | null>(null)
-  const [claudeCode, setClaudeCode] = useState<api.ClaudeCodeStatus | null>(null)
   const [cacheCleared, setCacheCleared] = useState(false)
 
-  useEffect(() => {
-    void api.claudeCodeStatus().then(setClaudeCode)
-  }, [])
   useEffect(() => {
     if (keyStatus.deepl) void api.deeplUsage().then(setUsage, () => setUsage(null))
     else setUsage(null)
@@ -118,57 +112,6 @@ export function SettingsScreen() {
             </form>
           )}
           {keyError && <ErrorNotice error={keyError} />}
-        </Section>
-
-        <Section title={t('settings.claude.title')}>
-          <p className="text-xs text-muted-foreground">{t('common.comingIn', { milestone: 'M5' })}</p>
-          <Row label={t('settings.claude.apiKey')}>
-            <Input type="password" disabled className="w-64" placeholder="sk-ant-..." />
-          </Row>
-          <Row label={t('settings.claude.model')}>
-            <Select disabled defaultValue={CLAUDE_MODELS[0]}>
-              <SelectTrigger className="w-64">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {CLAUDE_MODELS.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Row>
-          <Row label={t('settings.claude.code')}>
-            <span className="flex items-center gap-2 text-sm">
-              <Terminal className="size-4 text-muted-foreground" />
-              {claudeCode === 'found' ? t('settings.claude.codeFound') : t('settings.claude.codeNotFound')}
-            </span>
-          </Row>
-        </Section>
-
-        <Section title={t('settings.engines.title')}>
-          <Row label={t('settings.engines.default')}>
-            <EngineSelect value={settings.engine} onChange={(engine) => void updateSettings({ engine })} className="w-48" label={t('settings.engines.default')} />
-          </Row>
-          <Row label={t('settings.engines.fallback')}>
-            <Select
-              value={settings.fallback_engine ?? NONE}
-              onValueChange={(v) => void updateSettings({ fallback_engine: v === NONE ? null : (v as api.EngineId) })}
-            >
-              <SelectTrigger className="w-48" aria-label={t('settings.engines.fallback')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectItem value={NONE}>{t('settings.engines.none')}</SelectItem>
-                {ENGINES.map((e) => (
-                  <SelectItem key={e} value={e} disabled={!isEngineAvailable(e)}>
-                    {t(`engine.${e}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Row>
         </Section>
 
         <Section title={t('settings.languages.title')}>

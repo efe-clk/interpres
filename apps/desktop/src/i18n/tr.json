@@ -9,8 +9,7 @@
   "engine": {
     "deepl": "DeepL",
     "claude-api": "Claude API",
-    "claude-code": "Claude Code",
-    "unavailable": "Bu sürümde yok"
+    "claude-code": "Claude Code"
   },
   "status": {
     "free": "Free",
@@ -30,8 +29,7 @@
     "search": "Ara",
     "close": "Kapat",
     "retry": "Tekrar dene",
-    "goToSettings": "Ayarlara git",
-    "comingIn": "{{milestone}} aşamasında gelecek"
+    "goToSettings": "Ayarlara git"
   },
   "errors": {
     "missing_key": {
@@ -147,20 +145,6 @@
       "saved": "Anahtar kayıtlı ({{plan}})",
       "remove": "Anahtarı sil",
       "usage": "Kullanım: {{used}} / {{limit}} karakter"
-    },
-    "claude": {
-      "title": "Claude",
-      "apiKey": "Claude API anahtarı",
-      "model": "Model",
-      "code": "Claude Code",
-      "codeFound": "\"claude\" komutu bulundu",
-      "codeNotFound": "\"claude\" komutu bulunamadı"
-    },
-    "engines": {
-      "title": "Motorlar",
-      "default": "Varsayılan motor",
-      "fallback": "Yedek motor",
-      "none": "Yok"
     },
     "languages": {
       "title": "Varsayılan diller",

@@ -1,7 +1,7 @@
 import { ExternalLink, FileText, FolderOpen, Inbox, Plus, Trash2, Upload, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { EngineSelect, LanguageSelect } from '@/components/common/selects'
+import { LanguageSelect } from '@/components/common/selects'
 import { EmptyState, ErrorNotice, Kbd } from '@/components/common/states'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,13 +26,12 @@ export function DocumentsScreen({ active }: { active: boolean }) {
   const [jobs, setJobs] = useState<api.DocumentJob[]>([])
   const [source, setSource] = useState<string | null>(settings?.source_lang ?? null)
   const [target, setTarget] = useState(settings?.target_lang ?? 'EN-US')
-  const [engine, setEngine] = useState<api.EngineId>('deepl')
   const [useGlossary, setUseGlossary] = useState(true)
   const [hover, setHover] = useState(false)
   const [rejected, setRejected] = useState<string[]>([])
   const [error, setError] = useState<api.ApiError | null>(null)
-  const opts = useRef({ target, engine, useGlossary, source })
-  opts.current = { target, engine, useGlossary, source }
+  const opts = useRef({ target, useGlossary, source })
+  opts.current = { target, useGlossary, source }
 
   useEffect(() => api.subscribeJobs(setJobs), [])
 
@@ -41,10 +40,10 @@ export function DocumentsScreen({ active }: { active: boolean }) {
     setRejected(paths.filter((p) => !ok.includes(p)).map(fileName))
     setError(null)
     if (!ok.length) return
-    const { target, engine, useGlossary, source } = opts.current
+    const { target, useGlossary, source } = opts.current
     try {
       await api.addDocuments(ok, {
-        engine,
+        engine: 'deepl',
         useGlossary: useGlossary && !!source,
         request: { source, target, formality: 'default' },
       })
@@ -78,7 +77,6 @@ export function DocumentsScreen({ active }: { active: boolean }) {
         <LanguageSelect kind="source" value={source} onChange={setSource} className="w-40" label={t('documents.source')} />
         <span className="text-muted-foreground">→</span>
         <LanguageSelect kind="target" value={target} onChange={(v) => v && setTarget(v)} className="w-40" label={t('documents.target')} />
-        <EngineSelect value={engine} onChange={setEngine} className="w-32" label={t('documents.engine')} />
         <div className="flex items-center gap-2 pl-1" title={source ? undefined : t('glossary.sourceNeeded')}>
           <Switch id="use-glossary" checked={useGlossary && !!source} onCheckedChange={setUseGlossary} disabled={!source} />
           <Label htmlFor="use-glossary" className="text-sm font-normal text-muted-foreground">

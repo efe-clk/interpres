@@ -81,7 +81,24 @@ Metin ekranı gerçek çeviri yapar; 900x600'de düzgün; Wayland ve X11'de aç�
 **Bitti:** Aynı metin ikinci kez ağa gitmeden gelir; sözlük terimi çeviriye uygulanır;
 geçmişten kayıt Metin ekranında açılır.
 
-## [ ] M5 — Claude motoru + yedeğe düşme
+## [ ] M7 — Paketleme + sürüm
+
+- Tauri bundler: AppImage, deb (Linux), NSIS (Windows). Uygulama ikonu.
+- Etiketle (`v*`) tetiklenen Actions iş akışı → GitHub Releases'a yükleme.
+- CLI ikilisi de sürüme eklenir.
+
+**Bitti:** `v0.1.0` etiketi Releases sayfasında AppImage, deb ve setup.exe üretir;
+temiz bir makinede kurulup çalışır.
+
+---
+
+## Ertelendi: Claude (M5, M6)
+
+Kullanıcı kararıyla (2026-11-19) Claude motoru ve Claude yolu için belge hattı ertelendi.
+Boş `interpres-engine-claude` crate'i ve `claude` özelliği duruyor; arayüzde Claude
+seçenekleri gizli. Geri alınırken aşağıdaki plan kullanılır.
+
+### M5 — Claude motoru + yedeğe düşme
 
 - `interpres-engine-claude`, `claude` özelliği arkasında.
 - Claude API: reqwest ile Messages API; SSE akışı; prompt caching (sistem talimatı ve
@@ -97,7 +114,7 @@ geçmişten kayıt Metin ekranında açılır.
 **Bitti:** `--features claude` ile Claude API ve Claude Code çeviri yapar; özellik kapalıyken
 Claude kodu ikilide yok; Claude kapatılınca çeviri DeepL'den gelir.
 
-## [ ] M6 — Claude yolu için belge işleme hattı
+### M6 — Claude yolu için belge işleme hattı
 
 - `interpres-docs`: docx, pptx, xlsx (zip + quick-xml), srt, md, txt.
 - Run'lar korunarak metin parçaları çıkarılır, işaretli segmentler hâlinde çevrilir,
@@ -108,17 +125,6 @@ Claude kodu ikilide yok; Claude kapatılınca çeviri DeepL'den gelir.
 
 **Bitti:** Örnek docx/pptx/xlsx/srt/md Claude ile çevrilir, Word/LibreOffice'te biçimi
 bozulmadan açılır, hiçbir segment atlanmaz.
-
-## [ ] M7 — Paketleme + sürüm
-
-- Tauri bundler: AppImage, deb (Linux), NSIS (Windows). Uygulama ikonu.
-- Etiketle (`v*`) tetiklenen Actions iş akışı → GitHub Releases'a yükleme.
-- CLI ikilisi de sürüme eklenir.
-
-**Bitti:** `v0.1.0` etiketi Releases sayfasında AppImage, deb ve setup.exe üretir;
-temiz bir makinede kurulup çalışır.
-
----
 
 ## Sonrası (v2+)
 

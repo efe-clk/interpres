@@ -1,9 +1,9 @@
 # Interpres
 
 Genel amaçlı çeviri aracı: büyük belgeleri biçimi bozmadan çevirir, doğrudan yazılan
-metni çevirir. Motorlar: DeepL (varsayılan) ve isteğe bağlı Claude.
+metni çevirir. Motor: DeepL. (Claude desteği ertelendi.)
 
-*General-purpose translator for documents and text, powered by DeepL and optionally Claude.*
+*General-purpose translator for documents and text, powered by DeepL.*
 
 > Geliştirme aşamasında. Plan: [docs/PLAN.md](docs/PLAN.md)
 
@@ -16,19 +16,13 @@ cargo build --workspace
 cargo run -p interpres-cli -- --version
 ```
 
-Claude motoruyla birlikte:
-
-```sh
-cargo build --workspace --features interpres-cli/claude
-```
-
 ## Yapı
 
 | Klasör | İçerik |
 |---|---|
 | `crates/interpres-core` | Engine trait, ortak tipler, sözlük, önbellek, çeviri belleği |
 | `crates/interpres-engine-deepl` | DeepL motoru |
-| `crates/interpres-engine-claude` | Claude motoru (`claude` özelliği) |
+| `crates/interpres-engine-claude` | Claude motoru (ertelendi, boş) |
 | `crates/interpres-docs` | Belge ayrıştırma ve yeniden birleştirme |
 | `crates/interpres-cli` | `interpres` komut satırı aracı |
 | `apps/desktop` | Tauri v2 masaüstü uygulaması |

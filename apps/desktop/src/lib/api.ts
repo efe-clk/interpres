@@ -109,8 +109,6 @@ export interface HistoryEntry {
   created_at: number
 }
 
-export type ClaudeCodeStatus = 'found' | 'not_found'
-
 // ---------- Helpers ----------
 
 function toApiError(e: unknown): ApiError {
@@ -448,12 +446,7 @@ export async function listHistory(query: string): Promise<HistoryEntry[]> {
   return mockHistory.filter((h) => !q || `${h.source_text} ${h.target_text}`.toLocaleLowerCase().includes(q))
 }
 
-// ---------- Claude and cache ----------
-
-export async function claudeCodeStatus(): Promise<ClaudeCodeStatus> {
-  if (isTauri) return (await call<boolean>('claude_code_found')) ? 'found' : 'not_found'
-  return 'not_found'
-}
+// ---------- Cache ----------
 
 export async function clearCache(): Promise<void> {
   if (isTauri) return call('cache_clear')

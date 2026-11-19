@@ -69,7 +69,6 @@ pub fn run() {
             commands::deepl_usage,
             commands::get_settings,
             commands::save_settings,
-            commands::claude_code_found,
             commands::documents_list,
             commands::documents_add,
             commands::documents_cancel,

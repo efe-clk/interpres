@@ -1,7 +1,7 @@
 import { ArrowLeftRight, BookA, Check, Copy, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { EngineSelect, LanguageSelect } from '@/components/common/selects'
+import { LanguageSelect } from '@/components/common/selects'
 import { ErrorNotice, Kbd } from '@/components/common/states'
 import { TEXT_EVENTS } from '@/components/shell/CommandPalette'
 import { Button } from '@/components/ui/button'
@@ -18,7 +18,6 @@ export function TextScreen({ active }: { active: boolean }) {
 
   const [source, setSource] = useState<string | null>(null)
   const [target, setTarget] = useState('EN-US')
-  const [engine, setEngine] = useState<api.EngineId>('deepl')
   const [formality, setFormality] = useState<api.Formality>('default')
   const [input, setInput] = useState('')
   const [result, setResult] = useState<api.Translation | null>(null)
@@ -34,7 +33,6 @@ export function TextScreen({ active }: { active: boolean }) {
     initialized.current = true
     setSource(settings.source_lang)
     setTarget(settings.target_lang ?? 'EN-US')
-    setEngine(settings.engine)
   }, [settings])
 
   // Reopen from history.
@@ -157,7 +155,6 @@ export function TextScreen({ active }: { active: boolean }) {
               <SelectItem value="less">{t('text.formality.less')}</SelectItem>
             </SelectContent>
           </Select>
-          <EngineSelect value={engine} onChange={setEngine} className="w-32" label={t('documents.engine')} />
         </div>
       </header>
 

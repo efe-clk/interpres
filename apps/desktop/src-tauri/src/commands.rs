@@ -96,19 +96,6 @@ pub fn save_settings(settings: Settings) -> CmdResult<()> {
         .map_err(internal)
 }
 
-/// Whether the `claude` command (Claude Code) is on PATH.
-#[tauri::command]
-pub fn claude_code_found() -> bool {
-    let names: &[&str] = if cfg!(windows) {
-        &["claude.exe", "claude.cmd"]
-    } else {
-        &["claude"]
-    };
-    std::env::var_os("PATH").is_some_and(|path| {
-        std::env::split_paths(&path).any(|dir| names.iter().any(|n| dir.join(n).is_file()))
-    })
-}
-
 #[tauri::command]
 pub fn documents_list(queue: State<'_, DocumentQueue>) -> Vec<DocumentJob> {
     queue.jobs()
