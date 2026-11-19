@@ -1,10 +1,13 @@
 use std::io::{IsTerminal, Read};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::{Context, Result, anyhow, bail};
 use clap::{Parser, Subcommand, ValueEnum};
+use interpres_core::documents::{DocProgress, unique_output_path};
 use interpres_core::{
-    EngineError, EngineId, Formality, Settings, TranslateRequest, Translator, secrets,
+    DocumentEngine, DocumentRequest, EngineError, EngineId, Formality, Settings, TranslateRequest,
+    Translator, secrets,
 };
 use interpres_engine_deepl::DeeplEngine;
 
@@ -21,15 +24,32 @@ enum Command {
     /// Translate text given as arguments or on stdin.
     Translate {
         /// Target language, e.g. EN-US, DE, TR. Defaults to the target in settings.
-        #[arg(short, long)]
+        #[arg(short, long, value_parser = lang_code)]
         to: Option<String>,
         /// Source language. Auto-detected when omitted.
-        #[arg(short, long)]
+        #[arg(short, long, value_parser = lang_code)]
         from: Option<String>,
         #[arg(long, value_enum, default_value_t = FormalityArg::Default)]
         formality: FormalityArg,
         /// Text to translate. Read from stdin when omitted.
         text: Vec<String>,
+    },
+    /// Translate documents, keeping their format. Output goes next to the input
+    /// as `name.<LANG>.ext` unless --out is given.
+    Doc {
+        /// Target language, e.g. EN-US, DE, TR. Defaults to the target in settings.
+        #[arg(short, long, value_parser = lang_code)]
+        to: Option<String>,
+        /// Source language. Auto-detected when omitted.
+        #[arg(short, long, value_parser = lang_code)]
+        from: Option<String>,
+        #[arg(long, value_enum, default_value_t = FormalityArg::Default)]
+        formality: FormalityArg,
+        /// Output file (only with a single input).
+        #[arg(short, long)]
+        out: Option<PathBuf>,
+        #[arg(required = true)]
+        files: Vec<PathBuf>,
     },
     /// Manage API keys in the OS credential store.
     Key {
@@ -96,6 +116,13 @@ async fn main() -> Result<()> {
             formality,
             text,
         } => translate(to, from, formality.into(), text).await,
+        Command::Doc {
+            to,
+            from,
+            formality,
+            out,
+            files,
+        } => doc(to, from, formality.into(), out, files).await,
         Command::Key {
             action: KeyAction::Set { engine },
         } => {
@@ -154,6 +181,65 @@ async fn translate(
     Ok(())
 }
 
+async fn doc(
+    to: Option<String>,
+    from: Option<String>,
+    formality: Formality,
+    out: Option<PathBuf>,
+    files: Vec<PathBuf>,
+) -> Result<()> {
+    if out.is_some() && files.len() > 1 {
+        bail!("--out works with a single input file");
+    }
+    let settings = Settings::load(&Settings::default_path()?)?;
+    let req = DocumentRequest {
+        source: from.or(settings.source_lang),
+        target: to
+            .or(settings.target_lang)
+            .ok_or_else(|| anyhow!("no target language; pass --to, e.g. --to EN-US"))?,
+        formality,
+    };
+    let engine = deepl()?;
+    let cancel = tokio_util::sync::CancellationToken::new();
+
+    for input in files {
+        let ext = input
+            .extension()
+            .map(|e| e.to_string_lossy().to_lowercase())
+            .unwrap_or_default();
+        if !engine.supports(&ext) {
+            bail!("unsupported file type: {}", input.display());
+        }
+        let output = out
+            .clone()
+            .unwrap_or_else(|| unique_output_path(&input, &req.target));
+        let name = input.display().to_string();
+        let progress = |p: DocProgress| {
+            let state = match p {
+                DocProgress::Uploading => "uploading".to_string(),
+                DocProgress::Queued => "queued".to_string(),
+                DocProgress::Translating {
+                    seconds_remaining: Some(s),
+                } => format!("translating, ~{s}s left"),
+                DocProgress::Translating { .. } => "translating".to_string(),
+                DocProgress::Downloading => "downloading".to_string(),
+            };
+            eprintln!("{name}: {state}");
+        };
+        engine
+            .translate_document(&input, &output, &req, &progress, &cancel)
+            .await
+            .map_err(explain)?;
+        println!("{}", output.display());
+    }
+    Ok(())
+}
+
+/// DeepL codes are upper case (`en-us` → `EN-US`).
+fn lang_code(s: &str) -> Result<String, String> {
+    Ok(s.to_uppercase())
+}
+
 fn deepl() -> Result<DeeplEngine> {
     let key = secrets::get_key(EngineId::Deepl)?
         .ok_or_else(|| anyhow!("no DeepL key; run: interpres key set deepl"))?;
@@ -182,7 +268,7 @@ fn explain(e: EngineError) -> anyhow::Error {
         EngineError::QuotaExceeded => "the monthly character limit is reached: interpres usage",
         EngineError::RateLimited => "wait a moment and retry",
         EngineError::Network(_) => "check the internet connection",
-        EngineError::InvalidRequest(_) | EngineError::Service(_) => "",
+        EngineError::InvalidRequest(_) | EngineError::Service(_) | EngineError::Cancelled => "",
     };
     if hint.is_empty() {
         anyhow!(e)

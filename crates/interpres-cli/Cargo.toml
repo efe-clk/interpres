@@ -16,6 +16,7 @@ claude = ["dep:interpres-engine-claude"]
 anyhow.workspace = true
 clap.workspace = true
 tokio.workspace = true
+tokio-util.workspace = true
 tracing-subscriber.workspace = true
 interpres-core.workspace = true
 interpres-engine-deepl.workspace = true

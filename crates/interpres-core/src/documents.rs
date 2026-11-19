@@ -269,11 +269,9 @@ impl DocumentQueue {
                         Some(rem) => {
                             let mut max = max_remaining.lock().unwrap();
                             *max = (*max).max(rem);
-                            if *max == 0 {
-                                90
-                            } else {
-                                10 + (80 * (*max - rem) / *max) as u8
-                            }
+                            (80 * (*max - rem))
+                                .checked_div(*max)
+                                .map_or(90, |done| 10 + done as u8)
                         }
                         None => 50,
                     };
