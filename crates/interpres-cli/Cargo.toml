@@ -1,0 +1,20 @@
+[package]
+name = "interpres-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "interpres"
+path = "src/main.rs"
+
+[features]
+claude = ["dep:interpres-engine-claude"]
+
+[dependencies]
+clap.workspace = true
+interpres-core.workspace = true
+interpres-engine-deepl.workspace = true
+interpres-engine-claude = { workspace = true, optional = true }

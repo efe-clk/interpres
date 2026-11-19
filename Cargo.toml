@@ -1,0 +1,17 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "AGPL-3.0-only"
+repository = "https://github.com/efe-clk/interpres"
+rust-version = "1.85"
+
+[workspace.dependencies]
+interpres-core = { path = "crates/interpres-core" }
+interpres-engine-deepl = { path = "crates/interpres-engine-deepl" }
+interpres-engine-claude = { path = "crates/interpres-engine-claude" }
+interpres-docs = { path = "crates/interpres-docs" }
+clap = { version = "4", features = ["derive"] }
