@@ -3,6 +3,7 @@
 //! Keys ending in `:fx` use the Free endpoint, all others the Pro endpoint.
 
 mod document;
+mod glossary;
 
 use std::time::Duration;
 
@@ -127,6 +128,8 @@ struct TranslateBody<'a> {
     source_lang: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     formality: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    glossary_id: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -179,6 +182,9 @@ impl Engine for DeeplEngine {
             target_lang: &req.target,
             source_lang: req.source.as_deref(),
             formality: formality_param(req.formality),
+            glossary_id: self
+                .glossary_id(req.source.as_deref(), req.glossary.as_ref())
+                .await?,
         };
         let resp = self
             .send(self.http.post(self.url("/v2/translate")).json(&body))

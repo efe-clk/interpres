@@ -12,6 +12,7 @@ fn req(formality: Formality) -> TranslateRequest {
         source: None,
         target: "EN-US".into(),
         formality,
+        glossary: None,
     }
 }
 

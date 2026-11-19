@@ -24,6 +24,7 @@ fn req() -> DocumentRequest {
         source: Some("TR".into()),
         target: "DE".into(),
         formality: Formality::More,
+        glossary: None,
     }
 }
 

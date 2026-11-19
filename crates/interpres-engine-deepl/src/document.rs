@@ -55,6 +55,12 @@ impl DeeplEngine {
         if let Some(f) = formality_param(req.formality) {
             form = form.text("formality", f);
         }
+        if let Some(id) = self
+            .glossary_id(req.source.as_deref(), req.glossary.as_ref())
+            .await?
+        {
+            form = form.text("glossary_id", id);
+        }
         let resp = self
             .send(self.http.post(self.url("/v2/document")).multipart(form))
             .await?;
