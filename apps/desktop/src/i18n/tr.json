@@ -1,0 +1,178 @@
+{
+  "nav": {
+    "text": "Metin",
+    "documents": "Belgeler",
+    "glossary": "Sözlük",
+    "history": "Geçmiş",
+    "settings": "Ayarlar"
+  },
+  "engine": {
+    "deepl": "DeepL",
+    "claude-api": "Claude API",
+    "claude-code": "Claude Code",
+    "unavailable": "Bu sürümde yok"
+  },
+  "status": {
+    "free": "Free",
+    "pro": "Pro",
+    "noKey": "Anahtar yok",
+    "offline": "Bağlantı yok",
+    "ready": "Hazır"
+  },
+  "common": {
+    "cancel": "Vazgeç",
+    "save": "Kaydet",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "add": "Ekle",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı",
+    "search": "Ara",
+    "close": "Kapat",
+    "retry": "Tekrar dene",
+    "goToSettings": "Ayarlara git",
+    "comingIn": "{{milestone}} aşamasında gelecek"
+  },
+  "errors": {
+    "missing_key": { "title": "DeepL anahtarı yok", "hint": "Ayarlar'dan bir anahtar ekleyin." },
+    "invalid_key": { "title": "Anahtar geçersiz", "hint": "Anahtarı Ayarlar'dan kontrol edin." },
+    "quota_exceeded": { "title": "Kota doldu", "hint": "Bu ayın karakter sınırına ulaşıldı." },
+    "rate_limited": { "title": "Çok fazla istek", "hint": "Biraz bekleyip tekrar deneyin." },
+    "network": { "title": "Ağ yok", "hint": "İnternet bağlantısını kontrol edin." },
+    "invalid_request": { "title": "İstek geçersiz", "hint": "" },
+    "service": { "title": "Hizmet hatası", "hint": "" }
+  },
+  "text": {
+    "auto": "Otomatik algıla",
+    "detected": "Algılanan: {{lang}}",
+    "swap": "Dilleri değiştir",
+    "formality": {
+      "label": "Resmiyet",
+      "default": "Varsayılan",
+      "more": "Resmî",
+      "less": "Samimi",
+      "unsupported": "Bu dilde yok"
+    },
+    "sourcePlaceholder": "Çevrilecek metni yazın veya yapıştırın",
+    "outputEmpty": "Çeviri burada görünür",
+    "translate": "Çevir",
+    "translating": "Çevriliyor",
+    "chars": "{{count}} karakter",
+    "clear": "Temizle"
+  },
+  "documents": {
+    "drop": "Dosyaları buraya bırakın",
+    "dropHint": "docx, pptx, xlsx, pdf, srt, md, txt",
+    "addSample": "Örnek dosya ekle",
+    "unsupported": "Desteklenmeyen dosya: {{name}}",
+    "empty": "Kuyruk boş",
+    "emptyHint": "Çevirmek için dosya bırakın.",
+    "target": "Hedef dil",
+    "engine": "Motor",
+    "glossary": "Sözlük",
+    "noGlossary": "Sözlük yok",
+    "file": "Dosya",
+    "state": "Durum",
+    "reveal": "Klasörde göster",
+    "open": "Aç",
+    "remove": "Kuyruktan çıkar",
+    "status": {
+      "queued": "Sırada",
+      "uploading": "Yükleniyor",
+      "translating": "Çevriliyor",
+      "downloading": "İndiriliyor",
+      "done": "Bitti",
+      "error": "Hata"
+    }
+  },
+  "glossary": {
+    "pair": "Dil çifti",
+    "source": "Kaynak terim",
+    "target": "Hedef terim",
+    "addTerm": "Terim ekle",
+    "editTerm": "Terimi düzenle",
+    "import": "CSV içe aktar",
+    "export": "CSV dışa aktar",
+    "empty": "Bu dil çiftinde terim yok",
+    "emptyHint": "Terim ekleyin veya CSV içe aktarın.",
+    "noResults": "Sonuç yok",
+    "imported": "{{count}} terim içe aktarıldı",
+    "exported": "CSV panoya kopyalandı",
+    "csvFormat": "Her satır: kaynak,hedef"
+  },
+  "history": {
+    "search": "Geçmişte ara",
+    "empty": "Geçmiş boş",
+    "emptyHint": "Yapılan çeviriler burada listelenir.",
+    "noResults": "Sonuç yok",
+    "reopen": "Metin ekranında aç"
+  },
+  "settings": {
+    "deepl": {
+      "title": "DeepL",
+      "key": "API anahtarı",
+      "keyPlaceholder": "DeepL API anahtarı",
+      "verify": "Doğrula ve kaydet",
+      "verifying": "Doğrulanıyor",
+      "saved": "Anahtar kayıtlı ({{plan}})",
+      "remove": "Anahtarı sil",
+      "usage": "Kullanım: {{used}} / {{limit}} karakter"
+    },
+    "claude": {
+      "title": "Claude",
+      "apiKey": "Claude API anahtarı",
+      "model": "Model",
+      "code": "Claude Code",
+      "codeFound": "\"claude\" komutu bulundu",
+      "codeNotFound": "\"claude\" komutu bulunamadı"
+    },
+    "engines": {
+      "title": "Motorlar",
+      "default": "Varsayılan motor",
+      "fallback": "Yedek motor",
+      "none": "Yok"
+    },
+    "languages": {
+      "title": "Varsayılan diller",
+      "source": "Kaynak",
+      "target": "Hedef"
+    },
+    "appearance": {
+      "title": "Görünüm",
+      "theme": "Tema",
+      "dark": "Koyu",
+      "light": "Açık",
+      "uiLanguage": "Arayüz dili"
+    },
+    "shortcuts": {
+      "title": "Kısayollar"
+    },
+    "cache": {
+      "title": "Önbellek",
+      "clear": "Önbelleği temizle",
+      "cleared": "Önbellek temizlendi"
+    }
+  },
+  "shortcuts": {
+    "palette": "Komut paleti",
+    "translate": "Çevir",
+    "swap": "Dilleri değiştir",
+    "copy": "Çeviriyi kopyala",
+    "screens": "Ekranlar arasında geçiş",
+    "quick": "Hızlı çeviri (küresel)",
+    "quickWayland": "Wayland'de derleyiciye bağlayın: interpres-desktop --quick"
+  },
+  "palette": {
+    "placeholder": "Komut ara",
+    "empty": "Komut yok",
+    "navigation": "Git",
+    "actions": "İşlemler",
+    "toggleTheme": "Temayı değiştir",
+    "toggleLanguage": "Arayüz dilini değiştir"
+  },
+  "quick": {
+    "empty": "Panoda metin yok",
+    "emptyHint": "Bir metin kopyalayıp kısayola tekrar basın.",
+    "hint": "Enter kopyalar, Esc kapatır"
+  }
+}

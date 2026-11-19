@@ -1,0 +1,178 @@
+{
+  "nav": {
+    "text": "Text",
+    "documents": "Documents",
+    "glossary": "Glossary",
+    "history": "History",
+    "settings": "Settings"
+  },
+  "engine": {
+    "deepl": "DeepL",
+    "claude-api": "Claude API",
+    "claude-code": "Claude Code",
+    "unavailable": "Not in this version"
+  },
+  "status": {
+    "free": "Free",
+    "pro": "Pro",
+    "noKey": "No key",
+    "offline": "Offline",
+    "ready": "Ready"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "copy": "Copy",
+    "copied": "Copied",
+    "search": "Search",
+    "close": "Close",
+    "retry": "Retry",
+    "goToSettings": "Open settings",
+    "comingIn": "Arrives in {{milestone}}"
+  },
+  "errors": {
+    "missing_key": { "title": "No DeepL key", "hint": "Add a key in Settings." },
+    "invalid_key": { "title": "Invalid key", "hint": "Check the key in Settings." },
+    "quota_exceeded": { "title": "Quota reached", "hint": "This month's character limit is reached." },
+    "rate_limited": { "title": "Too many requests", "hint": "Wait a moment and retry." },
+    "network": { "title": "No network", "hint": "Check the internet connection." },
+    "invalid_request": { "title": "Invalid request", "hint": "" },
+    "service": { "title": "Service error", "hint": "" }
+  },
+  "text": {
+    "auto": "Detect language",
+    "detected": "Detected: {{lang}}",
+    "swap": "Swap languages",
+    "formality": {
+      "label": "Formality",
+      "default": "Default",
+      "more": "Formal",
+      "less": "Informal",
+      "unsupported": "Not available"
+    },
+    "sourcePlaceholder": "Type or paste text to translate",
+    "outputEmpty": "Translation appears here",
+    "translate": "Translate",
+    "translating": "Translating",
+    "chars": "{{count}} characters",
+    "clear": "Clear"
+  },
+  "documents": {
+    "drop": "Drop files here",
+    "dropHint": "docx, pptx, xlsx, pdf, srt, md, txt",
+    "addSample": "Add sample file",
+    "unsupported": "Unsupported file: {{name}}",
+    "empty": "Queue is empty",
+    "emptyHint": "Drop files to translate.",
+    "target": "Target language",
+    "engine": "Engine",
+    "glossary": "Glossary",
+    "noGlossary": "No glossary",
+    "file": "File",
+    "state": "Status",
+    "reveal": "Show in folder",
+    "open": "Open",
+    "remove": "Remove from queue",
+    "status": {
+      "queued": "Queued",
+      "uploading": "Uploading",
+      "translating": "Translating",
+      "downloading": "Downloading",
+      "done": "Done",
+      "error": "Error"
+    }
+  },
+  "glossary": {
+    "pair": "Language pair",
+    "source": "Source term",
+    "target": "Target term",
+    "addTerm": "Add term",
+    "editTerm": "Edit term",
+    "import": "Import CSV",
+    "export": "Export CSV",
+    "empty": "No terms for this pair",
+    "emptyHint": "Add a term or import a CSV.",
+    "noResults": "No results",
+    "imported": "{{count}} terms imported",
+    "exported": "CSV copied to clipboard",
+    "csvFormat": "One per line: source,target"
+  },
+  "history": {
+    "search": "Search history",
+    "empty": "History is empty",
+    "emptyHint": "Translations are listed here.",
+    "noResults": "No results",
+    "reopen": "Open in Text"
+  },
+  "settings": {
+    "deepl": {
+      "title": "DeepL",
+      "key": "API key",
+      "keyPlaceholder": "DeepL API key",
+      "verify": "Verify and save",
+      "verifying": "Verifying",
+      "saved": "Key stored ({{plan}})",
+      "remove": "Remove key",
+      "usage": "Usage: {{used}} / {{limit}} characters"
+    },
+    "claude": {
+      "title": "Claude",
+      "apiKey": "Claude API key",
+      "model": "Model",
+      "code": "Claude Code",
+      "codeFound": "\"claude\" command found",
+      "codeNotFound": "\"claude\" command not found"
+    },
+    "engines": {
+      "title": "Engines",
+      "default": "Default engine",
+      "fallback": "Fallback engine",
+      "none": "None"
+    },
+    "languages": {
+      "title": "Default languages",
+      "source": "Source",
+      "target": "Target"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "theme": "Theme",
+      "dark": "Dark",
+      "light": "Light",
+      "uiLanguage": "Interface language"
+    },
+    "shortcuts": {
+      "title": "Shortcuts"
+    },
+    "cache": {
+      "title": "Cache",
+      "clear": "Clear cache",
+      "cleared": "Cache cleared"
+    }
+  },
+  "shortcuts": {
+    "palette": "Command palette",
+    "translate": "Translate",
+    "swap": "Swap languages",
+    "copy": "Copy translation",
+    "screens": "Switch screens",
+    "quick": "Quick translate (global)",
+    "quickWayland": "On Wayland, bind in the compositor: interpres-desktop --quick"
+  },
+  "palette": {
+    "placeholder": "Search commands",
+    "empty": "No commands",
+    "navigation": "Go to",
+    "actions": "Actions",
+    "toggleTheme": "Toggle theme",
+    "toggleLanguage": "Toggle interface language"
+  },
+  "quick": {
+    "empty": "Clipboard has no text",
+    "emptyHint": "Copy some text and press the shortcut again.",
+    "hint": "Enter copies, Esc closes"
+  }
+}
