@@ -69,6 +69,13 @@ Kullanıcı kod bilmiyor. Kodu Claude yazar; derleme, test ve arayüz kontrolün
   kullanımda Hugging Face'ten sabit commit'ten indirilir ve SHA-256 ile doğrulanır
   (`<data dir>/interpres/models`). Tanıma modelleri: genel (zh/ja/en), Korece, Latin
   (Türkçe dahil). Kutular eksene hizalı; eğik metin desteklenmez.
+- Yakalama: wlroots derleyicilerde (Hyprland, Sway) screencopy doğrudan (libwayshot, ~7 ms,
+  izin sormaz); diğerlerinde `xcap`.
+- Katman ve bölge seçici: Wayland'de saf Rust layer-shell yüzeyleri (smithay-client-toolkit,
+  cosmic-text, tiny-skia); Windows/X11'de Tauri pencereleri (`#picker`, `#caption`).
+  Çeviri bölgenin üstüne değil yanına (altına, yer yoksa üstüne) çizilir; yoksa sonraki
+  yakalama katmanı da okur.
+- Bayraklar: `--overlay` katmanı aç/kapat, `--quit` çalışan kopyayı kapatır.
 
 ## Repo yapısı
 
@@ -84,13 +91,15 @@ crates/
   interpres-mcp/                # `interpres-mcp` stdio MCP sunucusu (rmcp)
   interpres-daemon/             # `interpres-daemon`: paylaşılan belge kuyruğu (soket / named pipe)
   interpres-ocr/                # PaddleOCR (ONNX) metin tanıma ve model indirme
+  interpres-overlay/            # ekran yakalama, değişim algılama, yakala-oku-çevir hattı,
+                                #   Wayland layer-shell bölge seçici ve altyazı katmanı
 apps/
   desktop/                      # Tauri v2 (src/ = React, src-tauri/ = Rust)
 docs/
   PLAN.md
 ```
 
-Sonraki sürümler: `interpres-overlay`. Daemon yalnızca belge kuyruğunu tutar; sözlük,
+Daemon yalnızca belge kuyruğunu tutar; sözlük,
 önbellek ve geçmiş SQLite dosyasında zaten süreçler arasında paylaşılır.
 Bu yüzden:
 

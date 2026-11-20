@@ -158,7 +158,7 @@ her şey bugünkü gibi çalışır.
 **Bitti:** Alt+Q uygulamayı açar / öne getirir / tepsiye gönderir; tepsi menüsü çalışır;
 `systemctl --user status interpres-daemon` etkin ve çökünce yeniden başlar.
 
-## [ ] M11 — v2.0: Oyun katmanı (ekran yakalama + OCR + katman)
+## [x] M11 — v2.0: Oyun katmanı (ekran yakalama + OCR + katman)
 
 - `crates/interpres-overlay`. Yalnızca ekran yakalama + OCR + katman; oyun belleğine
   kanca atılmaz (hook/inject yok).
@@ -175,6 +175,10 @@ her şey bugünkü gibi çalışır.
 
 **Bitti:** Hyprland'de ve Windows'ta pencereli bir oyunun altyazısı seçilen bölgeden
 okunup çevrilir ve katmanda gösterilir.
+
+> Not (2026-11-20): Hyprland'de uygulama içinden uçtan uca doğrulandı (görüntüleyicide
+> gösterilen Japonca altyazı → Türkçe katman). Windows yolu (Tauri pencereleri, xcap)
+> CI'da derleniyor ama gerçek bir Windows makinesinde denenmedi.
 
 ## [ ] M12 — macOS
 

@@ -30,6 +30,14 @@ menüsünden "Çık" ile kapanır. Küresel kısayollar (Ayarlar'dan değiştiri
 Wayland'de uygulamalar küresel kısayol kaydedemez; derleyicide (ör. Hyprland) bu
 komutlara bir kısayol bağlayın.
 
+### Oyun çevirisi
+
+"Oyun" ekranında oyunun yazı dilini seçin, OCR modelini tek tıkla indirin (~20–30 MB),
+"Bölge seç" ile altyazının çıktığı alanı çizin ve başlatın. Çeviri, seçilen alanın hemen
+altında, tıklamaları oyuna geçiren bir katmanda görünür. Oyunun belleğine dokunulmaz;
+yalnızca ekran okunur. Aç/kapat: Ctrl+Alt+O, tepsi menüsü ya da
+`interpres-desktop --overlay` (Wayland'de derleyici kısayoluna bağlayın).
+
 ### MCP sunucusu
 
 `interpres-mcp`, Interpres'i MCP istemcilerine açar: metin ve belge çevirisi, sözlük,
@@ -78,6 +86,8 @@ cargo run -p interpres-cli -- --version
 | `crates/interpres-cli` | `interpres` komut satırı aracı |
 | `crates/interpres-mcp` | `interpres-mcp` MCP sunucusu (stdio) |
 | `crates/interpres-daemon` | `interpres-daemon`: paylaşılan belge kuyruğu |
+| `crates/interpres-ocr` | PaddleOCR (ONNX) metin tanıma |
+| `crates/interpres-overlay` | Ekran yakalama, oyun katmanı, bölge seçici |
 | `apps/desktop` | Tauri v2 masaüstü uygulaması |
 
 ## Lisans
