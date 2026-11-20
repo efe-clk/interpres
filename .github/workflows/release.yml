@@ -72,7 +72,7 @@ jobs:
         run: cargo build --release --locked -p interpres-cli -p interpres-mcp -p interpres-daemon
       - name: Package CLI (Linux)
         if: runner.os == 'Linux'
-        run: tar -czf "${{ matrix.cli_name }}" -C target/release interpres interpres-mcp interpres-daemon -C "$GITHUB_WORKSPACE" LICENSE
+        run: tar -czf "${{ matrix.cli_name }}" -C target/release interpres interpres-mcp interpres-daemon -C "$GITHUB_WORKSPACE" LICENSE -C packaging/linux interpres-daemon.service
       - name: Package CLI (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
