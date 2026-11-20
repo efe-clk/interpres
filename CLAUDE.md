@@ -64,6 +64,11 @@ Kullanıcı kod bilmiyor. Kodu Claude yazar; derleme, test ve arayüz kontrolün
 ### Oyun (v2)
 
 - Yalnızca ekran yakalama + OCR + katman (overlay). Oyun belleğine hook/inject yok.
+- OCR: `crates/interpres-ocr`, PaddleOCR PP-OCRv5 mobil modelleri (Apache-2.0) `ort`
+  (ONNX Runtime, ikiliye statik gömülü) ile. Kullanıcı bir şey kurmaz; modeller ilk
+  kullanımda Hugging Face'ten sabit commit'ten indirilir ve SHA-256 ile doğrulanır
+  (`<data dir>/interpres/models`). Tanıma modelleri: genel (zh/ja/en), Korece, Latin
+  (Türkçe dahil). Kutular eksene hizalı; eğik metin desteklenmez.
 
 ## Repo yapısı
 
@@ -78,6 +83,7 @@ crates/
   interpres-cli/                # `interpres` komut satırı aracı
   interpres-mcp/                # `interpres-mcp` stdio MCP sunucusu (rmcp)
   interpres-daemon/             # `interpres-daemon`: paylaşılan belge kuyruğu (soket / named pipe)
+  interpres-ocr/                # PaddleOCR (ONNX) metin tanıma ve model indirme
 apps/
   desktop/                      # Tauri v2 (src/ = React, src-tauri/ = Rust)
 docs/

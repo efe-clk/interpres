@@ -164,8 +164,9 @@ her şey bugünkü gibi çalışır.
   kanca atılmaz (hook/inject yok).
 - Yakalama: Linux'ta xdg-desktop-portal ScreenCast (Wayland) ve X11; Windows'ta
   Windows.Graphics.Capture.
-- OCR: motor seçimi bu aşamanın başında kararlaştırılır (ör. Tesseract, Windows OCR,
-  ONNX tabanlı model).
+- [x] OCR (karar 2026-11-20: PaddleOCR ONNX, tek tıkla kurulum): `crates/interpres-ocr`,
+  PP-OCRv5 mobil + gömülü ONNX Runtime; modeller indirilip doğrulanır. Ölçüm: altyazı
+  karesi ~50 ms; İngilizce, Japonca ve Türkçe test görüntüleri birebir okundu.
 - Katman: seçilen bölgenin üstünde, tıklamaları geçiren şeffaf pencere; çeviri satırları
   yerinde ya da kenarda gösterilir.
 - Akış: kısayolla bölge seç → periyodik yakala → metin değiştiyse çevir (önbellek, daemon
