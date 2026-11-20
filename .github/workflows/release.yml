@@ -36,8 +36,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # 22.04 keeps the AppImage and deb compatible with older glibc.
-          - os: ubuntu-22.04
+          # 24.04: the screen-capture stack needs PipeWire newer than 22.04 ships.
+          # The AppImage and deb therefore need glibc 2.39 (Ubuntu 24.04+,
+          # Fedora 40+, Debian 13, Arch).
+          - os: ubuntu-24.04
             cli_name: interpres-cli-${{ github.ref_name }}-x86_64-linux.tar.gz
           - os: windows-latest
             cli_name: interpres-cli-${{ github.ref_name }}-x86_64-windows.zip

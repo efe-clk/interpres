@@ -13,7 +13,7 @@ metni çevirir. Motor: DeepL. (Claude desteği ertelendi.)
 
 | Sistem | Dosya |
 |---|---|
-| Linux | `Interpres_<sürüm>_amd64.AppImage` (çalıştırılabilir yapın) veya `.deb` |
+| Linux | `Interpres_<sürüm>_amd64.AppImage` (çalıştırılabilir yapın) veya `.deb`; glibc 2.39+ (Ubuntu 24.04+, Fedora 40+, Debian 13, Arch) |
 | Windows | `Interpres_<sürüm>_x64-setup.exe` |
 | CLI ve MCP | `interpres-cli-<sürüm>-x86_64-linux.tar.gz` / `-windows.zip` |
 
