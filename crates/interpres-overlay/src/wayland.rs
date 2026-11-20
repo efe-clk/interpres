@@ -49,37 +49,60 @@ pub fn pick_region() -> Result<Option<Region>, String> {
     let layer_shell = LayerShell::bind(&globals, &qh).map_err(err)?;
     let shm = Shm::bind(&globals, &qh).map_err(err)?;
 
-    let surface = compositor.create_surface(&qh);
-    let layer = layer_shell.create_layer_surface(
-        &qh,
-        surface,
-        Layer::Overlay,
-        Some("interpres-picker"),
-        None,
-    );
-    layer.set_anchor(Anchor::TOP | Anchor::BOTTOM | Anchor::LEFT | Anchor::RIGHT);
-    layer.set_exclusive_zone(-1);
-    layer.set_keyboard_interactivity(KeyboardInteractivity::Exclusive);
-    layer.set_size(0, 0);
-    layer.commit();
-
     let mut picker = Picker {
         registry_state: RegistryState::new(&globals),
         seat_state: SeatState::new(&globals, &qh),
         output_state: OutputState::new(&globals, &qh),
+        pool: SlotPool::new(1920 * 1080 * 4, &shm).map_err(err)?,
         shm,
-        pool: SlotPool::new(1920 * 1080 * 4, &Shm::bind(&globals, &qh).map_err(err)?)
-            .map_err(err)?,
-        layer,
-        width: 0,
-        height: 0,
-        origin: (0, 0),
+        screens: Vec::new(),
+        active: None,
         keyboard: None,
         pointer: None,
         start: None,
         current: None,
         result: None,
     };
+    // Learn the outputs, then dim every one of them: the drag may start on any screen.
+    queue.roundtrip(&mut picker).map_err(err)?;
+    let outputs: Vec<(Option<wl_output::WlOutput>, (i32, i32))> = picker
+        .output_state
+        .outputs()
+        .map(|o| {
+            let origin = picker
+                .output_state
+                .info(&o)
+                .and_then(|i| i.logical_position)
+                .unwrap_or((0, 0));
+            (Some(o), origin)
+        })
+        .collect();
+    let outputs = if outputs.is_empty() {
+        vec![(None, (0, 0))]
+    } else {
+        outputs
+    };
+    for (output, origin) in outputs {
+        let surface = compositor.create_surface(&qh);
+        let layer = layer_shell.create_layer_surface(
+            &qh,
+            surface,
+            Layer::Overlay,
+            Some("interpres-picker"),
+            output.as_ref(),
+        );
+        layer.set_anchor(Anchor::TOP | Anchor::BOTTOM | Anchor::LEFT | Anchor::RIGHT);
+        layer.set_exclusive_zone(-1);
+        layer.set_keyboard_interactivity(KeyboardInteractivity::Exclusive);
+        layer.set_size(0, 0);
+        layer.commit();
+        picker.screens.push(Screen {
+            layer,
+            width: 0,
+            height: 0,
+            origin,
+        });
+    }
     loop {
         queue.blocking_dispatch(&mut picker).map_err(err)?;
         if let Some(result) = picker.result.take() {
@@ -88,17 +111,24 @@ pub fn pick_region() -> Result<Option<Region>, String> {
     }
 }
 
+/// The picker's dimmed surface on one output.
+struct Screen {
+    layer: LayerSurface,
+    width: u32,
+    height: u32,
+    /// Logical position of the output.
+    origin: (i32, i32),
+}
+
 struct Picker {
     registry_state: RegistryState,
     seat_state: SeatState,
     output_state: OutputState,
     shm: Shm,
     pool: SlotPool,
-    layer: LayerSurface,
-    width: u32,
-    height: u32,
-    /// Logical position of the output the picker is on.
-    origin: (i32, i32),
+    screens: Vec<Screen>,
+    /// The screen the drag started on.
+    active: Option<usize>,
     keyboard: Option<wl_keyboard::WlKeyboard>,
     pointer: Option<wl_pointer::WlPointer>,
     start: Option<(f64, f64)>,
@@ -107,6 +137,12 @@ struct Picker {
 }
 
 impl Picker {
+    fn screen_of(&self, surface: &wl_surface::WlSurface) -> Option<usize> {
+        self.screens
+            .iter()
+            .position(|s| s.layer.wl_surface() == surface)
+    }
+
     fn selection(&self) -> Option<(u32, u32, u32, u32)> {
         let (s, c) = (self.start?, self.current?);
         let (x0, y0) = (s.0.min(c.0).max(0.0) as u32, s.1.min(c.1).max(0.0) as u32);
@@ -114,12 +150,19 @@ impl Picker {
         Some((x0, y0, x1.saturating_sub(x0), y1.saturating_sub(y0)))
     }
 
-    fn draw(&mut self) {
-        let (w, h) = (self.width, self.height);
+    fn draw(&mut self, index: usize) {
+        let Some(screen) = self.screens.get(index) else {
+            return;
+        };
+        let (w, h) = (screen.width, screen.height);
         if w == 0 || h == 0 {
             return;
         }
-        let sel = self.selection();
+        let sel = if self.active == Some(index) {
+            self.selection()
+        } else {
+            None
+        };
         let Ok((buffer, canvas)) =
             self.pool
                 .create_buffer(w as i32, h as i32, w as i32 * 4, wl_shm::Format::Argb8888)
@@ -140,10 +183,11 @@ impl Picker {
             };
             px.copy_from_slice(&value);
         }
-        let surface = self.layer.wl_surface();
+        let layer = &self.screens[index].layer;
+        let surface = layer.wl_surface();
         surface.damage_buffer(0, 0, w as i32, h as i32);
         if buffer.attach_to(surface).is_ok() {
-            self.layer.commit();
+            layer.commit();
         }
     }
 }
@@ -171,15 +215,8 @@ impl CompositorHandler for Picker {
         _: &Connection,
         _: &QueueHandle<Self>,
         _: &wl_surface::WlSurface,
-        output: &wl_output::WlOutput,
+        _: &wl_output::WlOutput,
     ) {
-        if let Some(pos) = self
-            .output_state
-            .info(output)
-            .and_then(|i| i.logical_position)
-        {
-            self.origin = pos;
-        }
     }
     fn surface_leave(
         &mut self,
@@ -208,13 +245,17 @@ impl LayerShellHandler for Picker {
         &mut self,
         _: &Connection,
         _: &QueueHandle<Self>,
-        _: &LayerSurface,
+        layer: &LayerSurface,
         configure: LayerSurfaceConfigure,
         _: u32,
     ) {
-        self.width = NonZeroU32::new(configure.new_size.0).map_or(1, NonZeroU32::get);
-        self.height = NonZeroU32::new(configure.new_size.1).map_or(1, NonZeroU32::get);
-        self.draw();
+        let Some(index) = self.screen_of(layer.wl_surface()) else {
+            return;
+        };
+        let screen = &mut self.screens[index];
+        screen.width = NonZeroU32::new(configure.new_size.0).map_or(1, NonZeroU32::get);
+        screen.height = NonZeroU32::new(configure.new_size.1).map_or(1, NonZeroU32::get);
+        self.draw(index);
     }
 }
 
@@ -321,27 +362,31 @@ impl PointerHandler for Picker {
         events: &[PointerEvent],
     ) {
         for event in events {
-            if &event.surface != self.layer.wl_surface() {
+            let Some(index) = self.screen_of(&event.surface) else {
                 continue;
-            }
+            };
             match event.kind {
                 PointerEventKind::Press { button, .. } if button == BTN_LEFT => {
+                    self.active = Some(index);
                     self.start = Some(event.position);
                     self.current = Some(event.position);
                 }
                 PointerEventKind::Press { .. } => self.result = Some(None),
-                PointerEventKind::Motion { .. } if self.start.is_some() => {
+                PointerEventKind::Motion { .. } if self.active == Some(index) => {
                     self.current = Some(event.position);
-                    self.draw();
+                    self.draw(index);
                 }
-                PointerEventKind::Release { button, .. } if button == BTN_LEFT => {
+                PointerEventKind::Release { button, .. }
+                    if button == BTN_LEFT && self.active == Some(index) =>
+                {
                     self.current = Some(event.position);
+                    let origin = self.screens[index].origin;
                     match self.selection() {
                         // Ignore clicks without a real drag.
                         Some((x, y, w, h)) if w >= 16 && h >= 8 => {
                             self.result = Some(Some(Region {
-                                x: self.origin.0 + x as i32,
-                                y: self.origin.1 + y as i32,
+                                x: origin.0 + x as i32,
+                                y: origin.1 + y as i32,
                                 width: w,
                                 height: h,
                             }));
@@ -349,7 +394,7 @@ impl PointerHandler for Picker {
                         _ => {
                             self.start = None;
                             self.current = None;
-                            self.draw();
+                            self.draw(index);
                         }
                     }
                 }
