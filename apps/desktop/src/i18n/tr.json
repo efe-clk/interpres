@@ -223,6 +223,19 @@
     "waiting": "Bölgede yazı bekleniyor",
     "needRegion": "Önce bir ekran bölgesi seçin.",
     "needModel": "Önce OCR modelini indirin.",
-    "waylandHint": "Hyprland'de bir tuşu derleyicide bağlayın: interpres-desktop --overlay"
+    "waylandHint": "Hyprland'de bir tuşu derleyicide bağlayın: interpres-desktop --overlay",
+    "look": "Altyazı görünümü",
+    "placement": "Konum",
+    "placementBelow": "Bölgenin altında",
+    "placementAbove": "Bölgenin üstünde",
+    "placementCustom": "Özel alan",
+    "pickArea": "Alan seç",
+    "noArea": "Alan seçilmedi",
+    "fontSize": "Yazı boyutu",
+    "fontAuto": "Otomatik",
+    "background": "Arka plan",
+    "opacity": "Opaklık",
+    "previewText": "Kapı kilitli. Gümüş bir anahtar gerekiyor.",
+    "lookHint": "Katman çalışırken yapılan değişiklikler hemen uygulanır."
   }
 }

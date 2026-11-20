@@ -1,5 +1,5 @@
 import { Crop, Download, Gamepad2, Play, Square } from 'lucide-react'
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LanguageSelect } from '@/components/common/selects'
 import { ErrorNotice, Kbd } from '@/components/common/states'
@@ -7,8 +7,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
 import * as api from '@/lib/api'
 import { useApp, useShortcuts } from '@/lib/app-context'
+import { captionCss } from '@/lib/caption'
 import { formatCombo } from '@/lib/shortcuts'
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -29,6 +32,7 @@ export function GameScreen({ active }: { active: boolean }) {
   const [running, setRunning] = useState(false)
   const [frame, setFrame] = useState<api.GameFrame | null>(null)
   const [error, setError] = useState<api.ApiError | null>(null)
+  const restartTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const game = settings?.game
 
   const refreshOcr = useCallback(async () => {
@@ -54,6 +58,21 @@ export function GameScreen({ active }: { active: boolean }) {
 
   if (!settings || !game) return null
   const setGame = (patch: Partial<api.GameSettings>) => void updateSettings({ game: { ...game, ...patch } })
+  const caption = game.caption
+
+  // Saves at once; a running overlay restarts shortly after the last change to
+  // pick the new look up (restarting reloads the OCR model, so not on every step).
+  const setCaption = (patch: Partial<api.CaptionStyle>) => {
+    setGame({ caption: { ...caption, ...patch } })
+    if (!running) return
+    if (restartTimer.current) clearTimeout(restartTimer.current)
+    restartTimer.current = setTimeout(() => {
+      void api
+        .gameStop()
+        .then(() => api.gameStart())
+        .catch((e) => setError(e as api.ApiError))
+    }, 700)
+  }
 
   const run = (fn: () => Promise<void>) => async () => {
     setError(null)
@@ -78,6 +97,13 @@ export function GameScreen({ active }: { active: boolean }) {
     const region = await api.gamePickRegion()
     if (region) setGame({ region })
   })
+
+  const pickArea = run(async () => {
+    const area = await api.gamePickRegion()
+    if (area) setCaption({ area, placement: 'custom' })
+  })
+
+  const css = captionCss(caption)
 
   const toggle = run(async () => {
     if (running) await api.gameStop()
@@ -145,6 +171,92 @@ export function GameScreen({ active }: { active: boolean }) {
               {t('game.pick')}
             </Button>
           </Row>
+        </section>
+
+        <section className="space-y-3 border-t border-border pt-5">
+          <h2 className="text-sm font-medium">{t('game.look')}</h2>
+          <Row label={t('game.placement')}>
+            {caption.placement === 'custom' && (
+              <>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {caption.area ? `${caption.area[2]}×${caption.area[3]} @ ${caption.area[0]},${caption.area[1]}` : t('game.noArea')}
+                </span>
+                <Button size="sm" variant="outline" onClick={() => void pickArea()}>
+                  <Crop />
+                  {t('game.pickArea')}
+                </Button>
+              </>
+            )}
+            <Select
+              value={caption.placement}
+              onValueChange={(v) => {
+                const placement = v as api.CaptionPlacement
+                if (placement === 'custom' && !caption.area) void pickArea()
+                else setCaption({ placement })
+              }}
+            >
+              <SelectTrigger className="w-48" aria-label={t('game.placement')}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper">
+                <SelectItem value="below">{t('game.placementBelow')}</SelectItem>
+                <SelectItem value="above">{t('game.placementAbove')}</SelectItem>
+                <SelectItem value="custom">{t('game.placementCustom')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </Row>
+          <Row label={t('game.fontSize')}>
+            <span className="w-12 text-right font-mono text-xs text-muted-foreground">
+              {caption.font_size ? `${caption.font_size}px` : ''}
+            </span>
+            <Slider
+              className="w-40"
+              min={12}
+              max={48}
+              step={1}
+              disabled={caption.font_size === null}
+              value={[caption.font_size ?? 24]}
+              onValueChange={([v]) => setCaption({ font_size: v })}
+              aria-label={t('game.fontSize')}
+            />
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Switch checked={caption.font_size === null} onCheckedChange={(auto) => setCaption({ font_size: auto ? null : 24 })} />
+              {t('game.fontAuto')}
+            </label>
+          </Row>
+          <Row label={t('game.background')}>
+            <input
+              type="color"
+              value={caption.background}
+              onChange={(e) => setCaption({ background: e.target.value })}
+              aria-label={t('game.background')}
+              className="h-8 w-10 cursor-pointer rounded-md border border-border bg-transparent p-0.5"
+            />
+          </Row>
+          <Row label={t('game.opacity')}>
+            <span className="w-12 text-right font-mono text-xs text-muted-foreground">{caption.opacity}%</span>
+            <Slider
+              className="w-40"
+              min={0}
+              max={100}
+              step={5}
+              value={[caption.opacity]}
+              onValueChange={([v]) => setCaption({ opacity: v })}
+              aria-label={t('game.opacity')}
+            />
+          </Row>
+          {/* Preview over a busy backdrop, like a game scene. */}
+          <div
+            className="rounded-lg p-4"
+            style={{ background: 'linear-gradient(135deg, #2a3a5a, #5a3a2a 50%, #2a5a3a)' }}
+          >
+            <div className="flex min-h-16 items-center justify-center rounded-[10px] px-3 py-2 text-center" style={css.panel}>
+              <p className="text-xl leading-snug" style={css.text}>
+                {t('game.previewText')}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">{t('game.lookHint')}</p>
         </section>
 
         <section className="flex items-center gap-3 border-t border-border pt-5">

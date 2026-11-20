@@ -65,12 +65,35 @@ export interface Settings {
 
 export type OcrModel = 'general' | 'korean' | 'latin'
 
+export type CaptionPlacement = 'below' | 'above' | 'custom'
+
+export interface CaptionStyle {
+  placement: CaptionPlacement
+  /** Caption rectangle for `custom`: x, y, width, height. */
+  area: [number, number, number, number] | null
+  /** Text size in px; null fits the text to the box. */
+  font_size: number | null
+  /** `#rrggbb` */
+  background: string
+  /** 0–100 */
+  opacity: number
+}
+
 export interface GameSettings {
   /** x, y, width, height in logical screen coordinates. */
   region: [number, number, number, number] | null
   ocr_model: OcrModel
   source_lang: string | null
   target_lang: string | null
+  caption: CaptionStyle
+}
+
+export const DEFAULT_CAPTION: CaptionStyle = {
+  placement: 'below',
+  area: null,
+  font_size: null,
+  background: '#101014',
+  opacity: 85,
 }
 
 export interface KeyStatus {
@@ -164,7 +187,7 @@ const defaultSettings: Settings = {
     language: 'tr',
     shortcuts: DEFAULT_SHORTCUTS,
   },
-  game: { region: null, ocr_model: 'general', source_lang: null, target_lang: null },
+  game: { region: null, ocr_model: 'general', source_lang: null, target_lang: null, caption: DEFAULT_CAPTION },
 }
 
 function loadMockSettings(): Settings {
@@ -176,7 +199,7 @@ function loadMockSettings(): Settings {
         ...defaultSettings,
         ...s,
         ui: { ...defaultSettings.ui, ...s.ui, shortcuts: { ...DEFAULT_SHORTCUTS, ...s.ui?.shortcuts } },
-        game: { ...defaultSettings.game, ...s.game },
+        game: { ...defaultSettings.game, ...s.game, caption: { ...DEFAULT_CAPTION, ...s.game?.caption } },
       }
     }
   } catch {

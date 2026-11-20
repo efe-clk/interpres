@@ -10,8 +10,9 @@ use std::time::Duration;
 use interpres_core::{EngineError, EngineId, Settings, Store, Translator, secrets};
 use interpres_engine_deepl::DeeplEngine;
 use interpres_ocr::{Ocr, RecModel, models};
+use interpres_overlay::caption::Style;
 use interpres_overlay::pipeline::OverlayError;
-use interpres_overlay::{Pipeline, Region, caption_area, default_capture};
+use interpres_overlay::{Pipeline, Placement, Region, caption_area, default_capture};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tokio::sync::oneshot;
@@ -225,6 +226,7 @@ fn start(app: &AppHandle) -> CmdResult<()> {
         .or(settings.target_lang)
         .unwrap_or_else(|| "EN-US".into());
     let ocr = Ocr::load(&root, model).map_err(invalid)?;
+    let (placement, style) = caption_look(&settings.game.caption);
     let mut pipeline = Pipeline::new(region, target, default_capture(), Box::new(ocr), translator);
     pipeline.source_lang = settings.game.source_lang;
 
@@ -233,7 +235,7 @@ fn start(app: &AppHandle) -> CmdResult<()> {
     let handle = app.clone();
     let thread = std::thread::Builder::new()
         .name("interpres-overlay".into())
-        .spawn(move || run(handle, pipeline, region, stop_flag))
+        .spawn(move || run(handle, pipeline, region, placement, style, stop_flag))
         .map_err(invalid)?;
     *runner = Some(Runner { stop, thread });
     let _ = app.emit(
@@ -244,6 +246,26 @@ fn start(app: &AppHandle) -> CmdResult<()> {
         },
     );
     Ok(())
+}
+
+/// Caption placement and style from the settings.
+fn caption_look(c: &interpres_core::CaptionStyle) -> (Placement, Style) {
+    let placement = match (c.placement.as_str(), c.area) {
+        ("custom", Some((x, y, width, height))) => Placement::Custom(Region {
+            x,
+            y,
+            width,
+            height,
+        }),
+        ("above", _) => Placement::Above,
+        _ => Placement::Below,
+    };
+    let style = Style {
+        font_size: c.font_size.map(|s| s as f32),
+        background: Style::parse_color(&c.background),
+        opacity: c.opacity.min(100),
+    };
+    (placement, style)
 }
 
 fn stop(app: &AppHandle) {
@@ -269,17 +291,19 @@ enum Sink {
 }
 
 impl Sink {
-    fn open(app: &AppHandle, region: Region) -> Sink {
+    fn open(app: &AppHandle, region: Region, placement: Placement, style: Style) -> Sink {
         #[cfg(target_os = "linux")]
         if std::env::var_os("WAYLAND_DISPLAY").is_some() {
-            match interpres_overlay::wayland::WaylandCaption::show(region) {
+            match interpres_overlay::wayland::WaylandCaption::show(region, placement, style) {
                 Ok(c) => return Sink::Layer(c),
                 Err(e) => {
                     tracing::info!(error = %e, "layer-shell caption unavailable, using a window")
                 }
             }
         }
-        if let Err(e) = open_caption_window(app, region) {
+        // The window page reads the style from the settings itself.
+        let _ = style;
+        if let Err(e) = open_caption_window(app, region, placement) {
             tracing::warn!(error = %e, "could not open the caption window");
         }
         Sink::Window(app.clone())
@@ -294,7 +318,7 @@ impl Sink {
     }
 }
 
-fn open_caption_window(app: &AppHandle, region: Region) -> tauri::Result<()> {
+fn open_caption_window(app: &AppHandle, region: Region, placement: Placement) -> tauri::Result<()> {
     let monitor = app
         .monitor_from_point(region.x as f64, region.y as f64)?
         .or(app.primary_monitor()?);
@@ -317,7 +341,7 @@ fn open_caption_window(app: &AppHandle, region: Region) -> tauri::Result<()> {
             }
         },
     );
-    let area = caption_area(region, screen);
+    let area = caption_area(region, screen, placement);
     let window =
         WebviewWindowBuilder::new(app, "caption", WebviewUrl::App("index.html#caption".into()))
             .decorations(false)
@@ -334,8 +358,15 @@ fn open_caption_window(app: &AppHandle, region: Region) -> tauri::Result<()> {
     Ok(())
 }
 
-fn run(app: AppHandle, mut pipeline: Pipeline, region: Region, stop: Arc<AtomicBool>) {
-    let sink = Sink::open(&app, region);
+fn run(
+    app: AppHandle,
+    mut pipeline: Pipeline,
+    region: Region,
+    placement: Placement,
+    style: Style,
+    stop: Arc<AtomicBool>,
+) {
+    let sink = Sink::open(&app, region, placement, style);
     while !stop.load(Ordering::SeqCst) {
         match tauri::async_runtime::block_on(pipeline.step()) {
             Ok(Some(frame)) => {

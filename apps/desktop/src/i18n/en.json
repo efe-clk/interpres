@@ -223,6 +223,19 @@
     "waiting": "Waiting for text in the region",
     "needRegion": "Select a screen region first.",
     "needModel": "Download the OCR model first.",
-    "waylandHint": "On Hyprland, bind a key in the compositor: interpres-desktop --overlay"
+    "waylandHint": "On Hyprland, bind a key in the compositor: interpres-desktop --overlay",
+    "look": "Caption appearance",
+    "placement": "Position",
+    "placementBelow": "Below the region",
+    "placementAbove": "Above the region",
+    "placementCustom": "Custom area",
+    "pickArea": "Select area",
+    "noArea": "No area selected",
+    "fontSize": "Text size",
+    "fontAuto": "Auto",
+    "background": "Background",
+    "opacity": "Opacity",
+    "previewText": "The door is locked. You need the silver key.",
+    "lookHint": "Changes apply right away while the overlay runs."
   }
 }

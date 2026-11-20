@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import * as api from '@/lib/api'
+import { captionCss } from '@/lib/caption'
 
 /** Full-screen transparent picker: drag a rectangle, Esc cancels. */
 export function PickerPage() {
@@ -64,19 +65,24 @@ export function PickerPage() {
 /** Click-through caption window placed next to the captured region. */
 export function CaptionPage() {
   const [text, setText] = useState('')
+  const [style, setStyle] = useState<api.CaptionStyle>(api.DEFAULT_CAPTION)
 
   useEffect(() => {
     document.documentElement.style.background = 'transparent'
     document.body.style.background = 'transparent'
+    void api.getSettings().then((s) => setStyle(s.game.caption))
     let off = () => {}
     void api.onGameFrame((f) => setText(f.translation)).then((f) => (off = f))
     return () => off()
   }, [])
 
   if (!text) return null
+  const css = captionCss(style)
   return (
-    <div className="fixed inset-0 flex items-center justify-center rounded-xl px-4 text-center" style={{ background: 'rgba(16,16,20,0.85)' }}>
-      <p className="text-[clamp(14px,4.5vh,30px)] leading-snug font-medium text-white">{text}</p>
+    <div className="fixed inset-0 flex items-center justify-center rounded-xl px-4 text-center" style={css.panel}>
+      <p className="text-[clamp(14px,4.5vh,30px)] leading-snug font-medium" style={css.text}>
+        {text}
+      </p>
     </div>
   )
 }
