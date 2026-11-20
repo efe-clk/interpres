@@ -155,7 +155,8 @@ npm --prefix apps/desktop run tauri dev
 - Hızlı çeviri penceresinin başlığı `Interpres Quick`; pencere kuralları buna göre yazılır.
   `--quick` ile başlatılınca ana pencere gizli kalır, uygulama arka planda bekler.
 - Kullanıcının Hyprland'inde Super+Q → `~/.local/bin/interpres-desktop --quick` (o.rebind;
-  eskiden pencere kapatmaydı, Super+W hâlâ kapatır), Alt+Q → `--toggle`, ve
+  eskiden pencere kapatmaydı, Super+W hâlâ kapatır), Alt+Q → `--toggle`, Super+N →
+  `--overlay` (oyun çevirisi aç/kapat), ve
   `Interpres Quick` için yüzer 560x320 kural.
 - Sistem tepsisi: ana pencereyi kapatmak tepsiye gönderir; çıkış tepsi menüsünden.
   `--toggle`: gizliyse/arkadaysa öne getirir, öndeyse tepsiye gönderir.
