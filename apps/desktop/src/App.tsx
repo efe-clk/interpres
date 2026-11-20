@@ -6,6 +6,7 @@ import { useHotkey } from '@/hooks/use-hotkey'
 import { AppProvider, SCREENS, useApp, useShortcuts } from '@/lib/app-context'
 import { cn } from '@/lib/utils'
 import { DocumentsScreen } from '@/screens/DocumentsScreen'
+import { GameScreen } from '@/screens/GameScreen'
 import { GlossaryScreen } from '@/screens/GlossaryScreen'
 import { HistoryScreen } from '@/screens/HistoryScreen'
 import { SettingsScreen } from '@/screens/SettingsScreen'
@@ -49,6 +50,9 @@ function Shell() {
         </div>
         <div className={pane('history')}>
           <HistoryScreen active={screen === 'history'} />
+        </div>
+        <div className={pane('game')}>
+          <GameScreen active={screen === 'game'} />
         </div>
         <div className={pane('settings')}>
           <SettingsScreen />

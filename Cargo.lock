@@ -2771,6 +2771,8 @@ dependencies = [
  "interpres-core",
  "interpres-daemon",
  "interpres-engine-deepl",
+ "interpres-ocr",
+ "interpres-overlay",
  "serde",
  "tauri",
  "tauri-build",

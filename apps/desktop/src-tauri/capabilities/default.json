@@ -4,7 +4,9 @@
   "description": "Permissions for the main and quick-translate windows",
   "windows": [
     "main",
-    "quick"
+    "quick",
+    "picker",
+    "caption"
   ],
   "permissions": [
     "core:default",
@@ -15,6 +17,7 @@
     "clipboard-manager:allow-write-text",
     "opener:default",
     "dialog:allow-open",
-    "dialog:allow-save"
+    "dialog:allow-save",
+    "core:window:allow-close"
   ]
 }

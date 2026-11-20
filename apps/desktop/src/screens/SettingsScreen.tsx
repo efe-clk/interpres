@@ -156,7 +156,7 @@ export function SettingsScreen() {
             onChange={(shortcuts) => void updateSettings({ ui: { ...settings.ui, shortcuts } })}
           />
           <Row label={t('shortcuts.screens')}>
-            <Kbd>Ctrl 1–5</Kbd>
+            <Kbd>Ctrl 1–6</Kbd>
           </Row>
           <p className="text-xs text-muted-foreground">{t('shortcuts.quickWayland')}</p>
         </Section>
@@ -186,6 +186,7 @@ const SHORTCUT_LABELS: [keyof api.Shortcuts, string][] = [
   ['swap', 'shortcuts.swap'],
   ['copy', 'shortcuts.copy'],
   ['add_files', 'shortcuts.addFiles'],
+  ['overlay', 'shortcuts.overlay'],
   ['quick', 'shortcuts.quick'],
   ['toggle', 'shortcuts.toggle'],
 ]

@@ -4,7 +4,8 @@
     "documents": "Belgeler",
     "glossary": "Sözlük",
     "history": "Geçmiş",
-    "settings": "Ayarlar"
+    "settings": "Ayarlar",
+    "game": "Oyun"
   },
   "engine": {
     "deepl": "DeepL",
@@ -181,7 +182,8 @@
     "quick": "Hızlı çeviri (küresel)",
     "quickWayland": "Wayland'de derleyicide bağlayın: interpres-desktop --quick (hızlı çeviri), --toggle (göster/gizle)",
     "addFiles": "Dosya ekle",
-    "toggle": "Uygulamayı göster/gizle (küresel)"
+    "toggle": "Uygulamayı göster/gizle (küresel)",
+    "overlay": "Oyun çevirisini aç/kapat (küresel)"
   },
   "palette": {
     "placeholder": "Komut ara",
@@ -195,5 +197,32 @@
     "empty": "Panoda metin yok",
     "emptyHint": "Bir metin kopyalayıp kısayola tekrar basın.",
     "hint": "Enter kopyalar, Esc kapatır"
+  },
+  "game": {
+    "intro": "Ekranın seçtiğiniz bölgesindeki yazıyı okur ve çevirisini hemen altında gösterir. Oyuna hiçbir şey eklenmez.",
+    "model": "OCR modeli",
+    "modelReady": "Kurulu",
+    "modelMissing": "İndirilmedi",
+    "download": "İndir ({{size}} MB)",
+    "downloading": "İndiriliyor {{percent}}%",
+    "script": "Oyunun yazı dili",
+    "scriptGeneral": "Çince, Japonca, İngilizce",
+    "scriptKorean": "Korece",
+    "scriptLatin": "Latin alfabesi (Türkçe, İngilizce, Almanca…)",
+    "source": "Kaynak dil",
+    "target": "Çeviri dili",
+    "region": "Ekran bölgesi",
+    "noRegion": "Seçilmedi",
+    "pick": "Bölge seç",
+    "pickHint": "Altyazının çıktığı alanı fareyle çizin. Esc vazgeçer.",
+    "start": "Başlat",
+    "stop": "Durdur",
+    "running": "Çalışıyor",
+    "stopped": "Durdu",
+    "preview": "Son okunan",
+    "waiting": "Bölgede yazı bekleniyor",
+    "needRegion": "Önce bir ekran bölgesi seçin.",
+    "needModel": "Önce OCR modelini indirin.",
+    "waylandHint": "Hyprland'de bir tuşu derleyicide bağlayın: interpres-desktop --overlay"
   }
 }

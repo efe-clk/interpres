@@ -8,6 +8,7 @@ export const DEFAULT_SHORTCUTS: Shortcuts = {
   swap: 'mod+shift+s',
   copy: 'mod+shift+c',
   add_files: 'mod+o',
+  overlay: 'mod+alt+o',
   quick: 'mod+alt+t',
   toggle: 'alt+q',
 }

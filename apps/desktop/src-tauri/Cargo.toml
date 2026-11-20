@@ -16,6 +16,8 @@ tauri-build.workspace = true
 interpres-core.workspace = true
 interpres-daemon.workspace = true
 interpres-engine-deepl.workspace = true
+interpres-ocr.workspace = true
+interpres-overlay.workspace = true
 serde.workspace = true
 tauri = { workspace = true, features = ["tray-icon"] }
 tauri-plugin-clipboard-manager.workspace = true

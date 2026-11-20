@@ -46,6 +46,8 @@ export interface Shortcuts {
   swap: string
   copy: string
   add_files: string
+  /** System-wide: starts or stops the game overlay. */
+  overlay: string
   /** System-wide: opens the quick-translate window. */
   quick: string
   /** System-wide: shows the main window, or sends it to the tray. */
@@ -58,6 +60,17 @@ export interface Settings {
   source_lang: string | null
   target_lang: string | null
   ui: { theme: 'dark' | 'light'; language: 'tr' | 'en'; shortcuts: Shortcuts }
+  game: GameSettings
+}
+
+export type OcrModel = 'general' | 'korean' | 'latin'
+
+export interface GameSettings {
+  /** x, y, width, height in logical screen coordinates. */
+  region: [number, number, number, number] | null
+  ocr_model: OcrModel
+  source_lang: string | null
+  target_lang: string | null
 }
 
 export interface KeyStatus {
@@ -151,6 +164,7 @@ const defaultSettings: Settings = {
     language: 'tr',
     shortcuts: DEFAULT_SHORTCUTS,
   },
+  game: { region: null, ocr_model: 'general', source_lang: null, target_lang: null },
 }
 
 function loadMockSettings(): Settings {
@@ -158,7 +172,12 @@ function loadMockSettings(): Settings {
     const raw = localStorage.getItem('interpres.settings')
     if (raw) {
       const s = JSON.parse(raw) as Partial<Settings>
-      return { ...defaultSettings, ...s, ui: { ...defaultSettings.ui, ...s.ui, shortcuts: { ...DEFAULT_SHORTCUTS, ...s.ui?.shortcuts } } }
+      return {
+        ...defaultSettings,
+        ...s,
+        ui: { ...defaultSettings.ui, ...s.ui, shortcuts: { ...DEFAULT_SHORTCUTS, ...s.ui?.shortcuts } },
+        game: { ...defaultSettings.game, ...s.game },
+      }
     }
   } catch {
     // ignore
@@ -464,6 +483,101 @@ export async function listHistory(query: string): Promise<HistoryEntry[]> {
   if (isTauri) return call('history_list', { query })
   const q = query.trim().toLocaleLowerCase()
   return mockHistory.filter((h) => !q || `${h.source_text} ${h.target_text}`.toLocaleLowerCase().includes(q))
+}
+
+// ---------- Game overlay ----------
+
+export interface OcrStatus {
+  installed: boolean
+  /** Download size in bytes. */
+  size: number
+}
+
+export interface GameFrame {
+  source: string
+  translation: string
+}
+
+export interface GameState {
+  running: boolean
+  error: ApiError | null
+}
+
+async function listenTo<T>(event: string, cb: (payload: T) => void): Promise<() => void> {
+  if (!isTauri) return () => {}
+  const { listen } = await import('@tauri-apps/api/event')
+  return listen<T>(event, (e) => cb(e.payload))
+}
+
+let mockOcrInstalled = false
+let mockRunning = false
+const mockGameListeners = new Set<(s: GameState) => void>()
+
+export async function ocrStatus(model: OcrModel): Promise<OcrStatus> {
+  if (isTauri) return call('ocr_status', { model })
+  return { installed: mockOcrInstalled, size: 21_400_000 }
+}
+
+export async function ocrDownload(model: OcrModel, onProgress: (done: number, total: number) => void): Promise<void> {
+  if (!isTauri) {
+    for (let i = 1; i <= 10; i++) {
+      await sleep(120)
+      onProgress(i * 2_140_000, 21_400_000)
+    }
+    mockOcrInstalled = true
+    return
+  }
+  const off = await listenTo<{ done: number; total: number }>('ocr-download', (p) => onProgress(p.done, p.total))
+  try {
+    await call('ocr_download', { model })
+  } finally {
+    off()
+  }
+}
+
+/** Lets the user drag a rectangle on screen. Null when cancelled. */
+export async function gamePickRegion(): Promise<[number, number, number, number] | null> {
+  if (isTauri) return call('game_pick_region')
+  await sleep(300)
+  return [320, 760, 960, 140]
+}
+
+/** Used by the window-based picker page. */
+export async function gameRegionPicked(region: [number, number, number, number] | null): Promise<void> {
+  if (isTauri) return call('game_region_picked', { region })
+}
+
+export async function gameStatus(): Promise<boolean> {
+  if (isTauri) return call('game_status')
+  return mockRunning
+}
+
+export async function gameStart(): Promise<void> {
+  if (isTauri) return call('game_start')
+  mockRunning = true
+  mockGameListeners.forEach((l) => l({ running: true, error: null }))
+}
+
+export async function gameStop(): Promise<void> {
+  if (isTauri) return call('game_stop')
+  mockRunning = false
+  mockGameListeners.forEach((l) => l({ running: false, error: null }))
+}
+
+export async function onGameFrame(cb: (f: GameFrame) => void): Promise<() => void> {
+  if (!isTauri) {
+    const t = setInterval(() => mockRunning && cb({ source: '扉は鍵がかかっている。', translation: 'Kapı kilitli.' }), 1500)
+    return () => clearInterval(t)
+  }
+  return listenTo('game-frame', cb)
+}
+
+export async function onGameState(cb: (s: GameState) => void): Promise<() => void> {
+  if (!isTauri) {
+    mockGameListeners.add(cb)
+    return () => void mockGameListeners.delete(cb)
+  }
+  return listenTo('game-state', cb)
 }
 
 // ---------- Cache ----------

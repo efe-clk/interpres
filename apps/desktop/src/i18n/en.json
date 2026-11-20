@@ -4,7 +4,8 @@
     "documents": "Documents",
     "glossary": "Glossary",
     "history": "History",
-    "settings": "Settings"
+    "settings": "Settings",
+    "game": "Game"
   },
   "engine": {
     "deepl": "DeepL",
@@ -181,7 +182,8 @@
     "quick": "Quick translate (global)",
     "quickWayland": "On Wayland, bind in the compositor: interpres-desktop --quick (quick translate), --toggle (show/hide)",
     "addFiles": "Add files",
-    "toggle": "Show/hide the app (global)"
+    "toggle": "Show/hide the app (global)",
+    "overlay": "Game overlay on/off (global)"
   },
   "palette": {
     "placeholder": "Search commands",
@@ -195,5 +197,32 @@
     "empty": "Clipboard has no text",
     "emptyHint": "Copy some text and press the shortcut again.",
     "hint": "Enter copies, Esc closes"
+  },
+  "game": {
+    "intro": "Reads the text in a screen region you choose and shows its translation right below it. Nothing is injected into the game.",
+    "model": "OCR model",
+    "modelReady": "Installed",
+    "modelMissing": "Not downloaded",
+    "download": "Download ({{size}} MB)",
+    "downloading": "Downloading {{percent}}%",
+    "script": "Game text script",
+    "scriptGeneral": "Chinese, Japanese, English",
+    "scriptKorean": "Korean",
+    "scriptLatin": "Latin alphabet (English, German, Turkish…)",
+    "source": "Source language",
+    "target": "Translate to",
+    "region": "Screen region",
+    "noRegion": "Not selected",
+    "pick": "Select region",
+    "pickHint": "Drag over where the subtitles appear. Esc cancels.",
+    "start": "Start",
+    "stop": "Stop",
+    "running": "Running",
+    "stopped": "Stopped",
+    "preview": "Last read",
+    "waiting": "Waiting for text in the region",
+    "needRegion": "Select a screen region first.",
+    "needModel": "Download the OCR model first.",
+    "waylandHint": "On Hyprland, bind a key in the compositor: interpres-desktop --overlay"
   }
 }

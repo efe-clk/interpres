@@ -3,8 +3,8 @@ import i18n from '@/i18n'
 import * as api from '@/lib/api'
 import { DEFAULT_SHORTCUTS } from '@/lib/shortcuts'
 
-export type Screen = 'text' | 'documents' | 'glossary' | 'history' | 'settings'
-export const SCREENS: Screen[] = ['text', 'documents', 'glossary', 'history', 'settings']
+export type Screen = 'text' | 'documents' | 'glossary' | 'history' | 'game' | 'settings'
+export const SCREENS: Screen[] = ['text', 'documents', 'glossary', 'history', 'game', 'settings']
 
 interface AppState {
   screen: Screen

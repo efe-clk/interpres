@@ -2,6 +2,7 @@
 
 mod commands;
 mod documents;
+mod game;
 
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -18,10 +19,18 @@ const QUICK_FLAG: &str = "--quick";
 /// Command-line flag that shows the main window, or sends it to the tray when it is
 /// already in front.
 const TOGGLE_FLAG: &str = "--toggle";
+/// Command-line flag that starts or stops the game overlay.
+const OVERLAY_FLAG: &str = "--overlay";
+/// Command-line flag that quits a running instance (from scripts or the terminal).
+const QUIT_FLAG: &str = "--quit";
 
-/// The registered show/hide shortcut, to tell it apart from the quick-translate one.
+/// The registered show/hide and overlay shortcuts, to tell them apart from the
+/// quick-translate one.
 #[derive(Default)]
-struct ToggleShortcut(Mutex<Option<Shortcut>>);
+struct GlobalShortcuts {
+    toggle: Mutex<Option<Shortcut>>,
+    overlay: Mutex<Option<Shortcut>>,
+}
 
 pub fn run() {
     tracing_subscriber::fmt()
@@ -30,10 +39,14 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            if args.iter().any(|a| a == QUICK_FLAG) {
+            if args.iter().any(|a| a == QUIT_FLAG) {
+                app.exit(0);
+            } else if args.iter().any(|a| a == QUICK_FLAG) {
                 show_quick(app);
             } else if args.iter().any(|a| a == TOGGLE_FLAG) {
                 toggle_main(app);
+            } else if args.iter().any(|a| a == OVERLAY_FLAG) {
+                game::toggle(app);
             } else {
                 show_main(app);
             }
@@ -47,23 +60,30 @@ pub fn run() {
                     if event.state != ShortcutState::Pressed {
                         return;
                     }
-                    let toggle = app.state::<ToggleShortcut>();
-                    let is_toggle = toggle
-                        .0
-                        .lock()
-                        .unwrap()
-                        .as_ref()
-                        .is_some_and(|t| t.id() == shortcut.id());
-                    if is_toggle {
+                    let ids = app.state::<GlobalShortcuts>();
+                    let is = |slot: &Mutex<Option<Shortcut>>| {
+                        slot.lock()
+                            .unwrap()
+                            .as_ref()
+                            .is_some_and(|s| s.id() == shortcut.id())
+                    };
+                    if is(&ids.toggle) {
                         toggle_main(app);
+                    } else if is(&ids.overlay) {
+                        game::toggle(app);
                     } else {
                         show_quick(app);
                     }
                 })
                 .build(),
         )
-        .manage(ToggleShortcut::default())
+        .manage(GlobalShortcuts::default())
+        .manage(game::Game::default())
         .setup(|app| {
+            // Nothing to quit when no other instance is running.
+            if std::env::args().any(|a| a == QUIT_FLAG) {
+                std::process::exit(0);
+            }
             let settings = interpres_core::Settings::default_path()
                 .and_then(|p| interpres_core::Settings::load(&p))
                 .unwrap_or_default();
@@ -73,6 +93,11 @@ pub fn run() {
             // in the background so the next shortcut press opens instantly.
             if std::env::args().any(|a| a == QUICK_FLAG) {
                 show_quick(app.handle());
+            } else if std::env::args().any(|a| a == OVERLAY_FLAG) {
+                // Started only for the overlay: stay in the tray. Starting needs the
+                // store, so it runs after setup.
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move { game::toggle(&handle) });
             } else if let Some(w) = app.get_webview_window("main") {
                 let _ = w.show();
             }
@@ -120,6 +145,13 @@ pub fn run() {
             commands::glossary_export,
             commands::history_list,
             commands::cache_clear,
+            game::ocr_status,
+            game::ocr_download,
+            game::game_pick_region,
+            game::game_region_picked,
+            game::game_status,
+            game::game_start,
+            game::game_stop,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -160,27 +192,44 @@ pub(crate) fn register_global_shortcuts(app: &AppHandle, shortcuts: &interpres_c
     if let Err(e) = gs.register(to_accelerator(&shortcuts.quick).as_str()) {
         tracing::warn!(error = %e, combo = %shortcuts.quick, "global shortcut unavailable");
     }
-    let toggle = Shortcut::from_str(&to_accelerator(&shortcuts.toggle)).ok();
-    if let Some(t) = &toggle
-        && let Err(e) = gs.register(*t)
-    {
-        tracing::warn!(error = %e, combo = %shortcuts.toggle, "global shortcut unavailable");
+    let ids = app.state::<GlobalShortcuts>();
+    for (combo, slot) in [
+        (&shortcuts.toggle, &ids.toggle),
+        (&shortcuts.overlay, &ids.overlay),
+    ] {
+        let parsed = Shortcut::from_str(&to_accelerator(combo)).ok();
+        if let Some(s) = &parsed
+            && let Err(e) = gs.register(*s)
+        {
+            tracing::warn!(error = %e, combo = %combo, "global shortcut unavailable");
+        }
+        *slot.lock().unwrap() = parsed;
     }
-    *app.state::<ToggleShortcut>().0.lock().unwrap() = toggle;
 }
 
 /// Tray icon with show/hide, quick translate and quit. Labels follow the UI language.
 fn build_tray(app: &AppHandle, language: &str) -> tauri::Result<()> {
-    let (show, quick, quit) = if language == "en" {
-        ("Show / hide", "Quick translate", "Quit")
+    let (show, quick, overlay, quit) = if language == "en" {
+        (
+            "Show / hide",
+            "Quick translate",
+            "Game overlay on / off",
+            "Quit",
+        )
     } else {
-        ("Göster / gizle", "Hızlı çeviri", "Çık")
+        (
+            "Göster / gizle",
+            "Hızlı çeviri",
+            "Oyun çevirisi aç / kapat",
+            "Çık",
+        )
     };
     let menu = Menu::with_items(
         app,
         &[
             &MenuItem::with_id(app, "toggle", show, true, None::<&str>)?,
             &MenuItem::with_id(app, "quick", quick, true, None::<&str>)?,
+            &MenuItem::with_id(app, "overlay", overlay, true, None::<&str>)?,
             &PredefinedMenuItem::separator(app)?,
             &MenuItem::with_id(app, "quit", quit, true, None::<&str>)?,
         ],
@@ -191,6 +240,7 @@ fn build_tray(app: &AppHandle, language: &str) -> tauri::Result<()> {
         .on_menu_event(|app, event| match event.id().as_ref() {
             "toggle" => toggle_main(app),
             "quick" => show_quick(app),
+            "overlay" => game::toggle(app),
             "quit" => app.exit(0),
             _ => {}
         })
