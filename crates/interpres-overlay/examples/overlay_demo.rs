@@ -34,7 +34,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let frame = p.step().await?;
         let ms = t.elapsed().as_secs_f64() * 1000.0;
         match frame {
-            Some(f) => println!("step {i} ({ms:.0} ms):\n  {}\n  => {}", f.source.replace('\n', " / "), f.translation),
+            Some(f) => println!(
+                "step {i} ({ms:.0} ms):\n  {}\n  => {}",
+                f.source.replace('\n', " / "),
+                f.translation
+            ),
             None => println!("step {i} ({ms:.0} ms): unchanged"),
         }
     }
