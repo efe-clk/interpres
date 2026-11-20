@@ -51,7 +51,7 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
             libayatana-appindicator3-dev librsvg2-dev \
             libpipewire-0.3-dev libgbm-dev libdrm-dev libegl1-mesa-dev libwayland-dev \
-            libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev libdbus-1-dev clang patchelf
+            libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev libdbus-1-dev libxkbcommon-dev clang patchelf
       - uses: actions/setup-node@v5
         with:
           node-version: 22
