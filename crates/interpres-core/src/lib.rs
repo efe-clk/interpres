@@ -17,7 +17,7 @@ pub use documents::{DocumentEngine, DocumentQueue, DocumentRequest};
 pub use engine::{Engine, TextStream};
 pub use error::EngineError;
 pub use glossary::{Glossary, GlossaryTerm};
-pub use settings::{Settings, Shortcuts, UiSettings};
+pub use settings::{GameSettings, Settings, Shortcuts, UiSettings};
 pub use store::Store;
 pub use translator::Translator;
 pub use types::{

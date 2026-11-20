@@ -15,6 +15,32 @@ pub struct Settings {
     pub source_lang: Option<String>,
     pub target_lang: Option<String>,
     pub ui: UiSettings,
+    pub game: GameSettings,
+}
+
+/// Screen translation for games (OCR overlay).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct GameSettings {
+    /// Screen region to read, in logical global coordinates: x, y, width, height.
+    pub region: Option<(i32, i32, u32, u32)>,
+    /// OCR recognition model: `general` (Chinese, Japanese, English), `korean`, `latin`.
+    pub ocr_model: String,
+    /// `None` means auto-detect.
+    pub source_lang: Option<String>,
+    /// `None` falls back to the main target language.
+    pub target_lang: Option<String>,
+}
+
+impl Default for GameSettings {
+    fn default() -> Self {
+        Self {
+            region: None,
+            ocr_model: "general".into(),
+            source_lang: None,
+            target_lang: None,
+        }
+    }
 }
 
 /// Preferences of graphical front-ends.
@@ -37,6 +63,8 @@ pub struct Shortcuts {
     pub swap: String,
     pub copy: String,
     pub add_files: String,
+    /// System-wide: starts or stops the game overlay.
+    pub overlay: String,
     /// System-wide: opens the quick-translate window.
     pub quick: String,
     /// System-wide: shows the main window, or sends it to the tray.
@@ -51,6 +79,7 @@ impl Default for Shortcuts {
             swap: "mod+shift+s".into(),
             copy: "mod+shift+c".into(),
             add_files: "mod+o".into(),
+            overlay: "mod+alt+o".into(),
             quick: "mod+alt+t".into(),
             toggle: "alt+q".into(),
         }
@@ -75,6 +104,7 @@ impl Default for Settings {
             source_lang: None,
             target_lang: None,
             ui: UiSettings::default(),
+            game: GameSettings::default(),
         }
     }
 }
@@ -164,6 +194,12 @@ mod tests {
                     ..Shortcuts::default()
                 },
             },
+            game: GameSettings {
+                region: Some((10, 20, 800, 120)),
+                ocr_model: "latin".into(),
+                source_lang: None,
+                target_lang: Some("TR".into()),
+            },
         };
         s.save(&p).unwrap();
         assert_eq!(Settings::load(&p).unwrap(), s);
@@ -177,5 +213,6 @@ mod tests {
         assert_eq!(s.target_lang.as_deref(), Some("DE"));
         assert_eq!(s.ui.theme, "dark");
         assert_eq!(s.ui.shortcuts.palette, "mod+k");
+        assert_eq!(s.game.ocr_model, "general");
     }
 }
