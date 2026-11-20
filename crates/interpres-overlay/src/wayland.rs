@@ -30,8 +30,8 @@ use wayland_client::globals::registry_queue_init;
 use wayland_client::protocol::{wl_keyboard, wl_output, wl_pointer, wl_seat, wl_shm, wl_surface};
 use wayland_client::{Connection, QueueHandle};
 
-use crate::caption::Painter;
-use crate::{Region, caption_area};
+use crate::caption::{Painter, Style};
+use crate::{Placement, Region, caption_area};
 
 fn err(e: impl std::fmt::Display) -> String {
     e.to_string()
@@ -391,13 +391,13 @@ pub struct WaylandCaption {
 }
 
 impl WaylandCaption {
-    pub fn show(region: Region) -> Result<Self, String> {
+    pub fn show(region: Region, placement: Placement, style: Style) -> Result<Self, String> {
         let (tx, rx) = channel::channel::<Msg>();
         let (ready_tx, ready_rx) = std::sync::mpsc::channel::<Result<(), String>>();
         let thread = std::thread::Builder::new()
             .name("interpres-caption".into())
             .spawn(move || {
-                if let Err(e) = run_caption(region, rx, &ready_tx) {
+                if let Err(e) = run_caption(region, placement, style, rx, &ready_tx) {
                     let _ = ready_tx.send(Err(e));
                 }
             })
@@ -425,6 +425,8 @@ impl Drop for WaylandCaption {
 
 fn run_caption(
     region: Region,
+    placement: Placement,
+    style: Style,
     rx: channel::Channel<Msg>,
     ready: &std::sync::mpsc::Sender<Result<(), String>>,
 ) -> Result<(), String> {
@@ -445,6 +447,7 @@ fn run_caption(
         scale: 1,
         text: String::new(),
         painter: Painter::new(),
+        style,
         configured: false,
         exit: false,
     };
@@ -476,7 +479,7 @@ fn run_caption(
         width: size.0 as u32,
         height: size.1 as u32,
     };
-    let region = caption_area(region, screen);
+    let region = caption_area(region, screen, placement);
     state.region = region;
 
     let surface = compositor.create_surface(&qh);
@@ -531,6 +534,7 @@ struct Caption {
     scale: i32,
     text: String,
     painter: Painter,
+    style: Style,
     configured: bool,
     exit: bool,
 }
@@ -545,7 +549,9 @@ impl Caption {
         }
         let scale = self.scale.max(1) as u32;
         let (w, h) = (self.region.width * scale, self.region.height * scale);
-        let pixels = self.painter.render(&self.text, w, h, scale as f32);
+        let pixels = self
+            .painter
+            .render(&self.text, w, h, scale as f32, &self.style);
         let Ok((buffer, canvas)) =
             self.pool
                 .create_buffer(w as i32, h as i32, w as i32 * 4, wl_shm::Format::Argb8888)

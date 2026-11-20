@@ -1,5 +1,6 @@
 //! Live overlay on Wayland:
-//! `live X Y W H TARGET SECONDS` translates a region into a caption below it;
+//! `live X Y W H TARGET SECONDS [below|above] [#rrggbb] [OPACITY] [FONT_PX]`
+//! translates a region into a caption next to it;
 //! `pick` opens the region picker and prints the region.
 
 #[cfg(not(target_os = "linux"))]
@@ -21,8 +22,9 @@ mod linux {
     use interpres_core::{EngineId, Store, Translator, secrets};
     use interpres_engine_deepl::DeeplEngine;
     use interpres_ocr::{Ocr, RecModel, models};
+    use interpres_overlay::caption::Style;
     use interpres_overlay::wayland::{WaylandCaption, pick_region};
-    use interpres_overlay::{Pipeline, Region, default_capture};
+    use interpres_overlay::{Pipeline, Placement, Region, default_capture};
 
     pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let a: Vec<String> = std::env::args().skip(1).collect();
@@ -48,7 +50,18 @@ mod linux {
             Box::new(Ocr::load(&root, RecModel::General)?),
             Arc::new(translator),
         );
-        let caption = WaylandCaption::show(region)?;
+        let placement = match a.get(7).map(String::as_str) {
+            Some("above") => Placement::Above,
+            _ => Placement::Below,
+        };
+        let style = Style {
+            background: a
+                .get(8)
+                .map_or(Style::default().background, |c| Style::parse_color(c)),
+            opacity: a.get(9).and_then(|o| o.parse().ok()).unwrap_or(85),
+            font_size: a.get(10).and_then(|f| f.parse().ok()),
+        };
+        let caption = WaylandCaption::show(region, placement, style)?;
         let end = Instant::now() + Duration::from_secs(n(6) as u64);
         while Instant::now() < end {
             if let Some(frame) = pipeline.step().await? {

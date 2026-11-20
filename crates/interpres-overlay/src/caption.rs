@@ -4,6 +4,49 @@
 use cosmic_text::{Align, Attrs, Buffer, Color, Family, FontSystem, Metrics, Shaping, SwashCache};
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Transform};
 
+/// How the caption looks.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Style {
+    /// Text size in logical pixels; `None` fits the text to the box.
+    pub font_size: Option<f32>,
+    pub background: [u8; 3],
+    /// Background opacity, 0–100.
+    pub opacity: u8,
+}
+
+impl Default for Style {
+    fn default() -> Self {
+        Self {
+            font_size: None,
+            background: [16, 16, 20],
+            opacity: 85,
+        }
+    }
+}
+
+impl Style {
+    /// Parses `#rrggbb`; falls back to the default dark background.
+    pub fn parse_color(hex: &str) -> [u8; 3] {
+        let h = hex.trim_start_matches('#');
+        let byte = |i: usize| h.get(i..i + 2).and_then(|b| u8::from_str_radix(b, 16).ok());
+        match (h.len(), byte(0), byte(2), byte(4)) {
+            (6, Some(r), Some(g), Some(b)) => [r, g, b],
+            _ => Style::default().background,
+        }
+    }
+
+    /// White text on dark or faint backgrounds, near-black on light ones.
+    fn text_color(&self) -> [u8; 3] {
+        let [r, g, b] = self.background.map(|c| c as f32 / 255.0);
+        let luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        if self.opacity < 30 || luminance < 0.55 {
+            [255, 255, 255]
+        } else {
+            [20, 20, 24]
+        }
+    }
+}
+
 /// Font and glyph caches; creating them scans the system fonts, so keep one.
 pub struct Painter {
     fonts: FontSystem,
@@ -26,13 +69,22 @@ impl Painter {
 
     /// Renders `text` into a `width`×`height` buffer (physical pixels). Empty text
     /// gives a fully transparent buffer.
-    pub fn render(&mut self, text: &str, width: u32, height: u32, scale: f32) -> Vec<u8> {
+    pub fn render(
+        &mut self,
+        text: &str,
+        width: u32,
+        height: u32,
+        scale: f32,
+        style: &Style,
+    ) -> Vec<u8> {
         let Some(mut pixmap) = Pixmap::new(width.max(1), height.max(1)) else {
             return vec![0; (width * height * 4) as usize];
         };
         if !text.trim().is_empty() {
-            self.panel(&mut pixmap, scale);
-            self.text(&mut pixmap, text, scale);
+            if style.opacity > 0 {
+                self.panel(&mut pixmap, scale, style);
+            }
+            self.text(&mut pixmap, text, scale, style);
         }
         // tiny-skia stores premultiplied RGBA; Wayland wants BGRA.
         let mut out = pixmap.take();
@@ -42,7 +94,7 @@ impl Painter {
         out
     }
 
-    fn panel(&self, pixmap: &mut Pixmap, scale: f32) {
+    fn panel(&self, pixmap: &mut Pixmap, scale: f32, style: &Style) {
         let (w, h) = (pixmap.width() as f32, pixmap.height() as f32);
         let r = (10.0 * scale).min(h / 2.0);
         let mut pb = PathBuilder::new();
@@ -58,7 +110,9 @@ impl Painter {
         pb.close();
         if let Some(path) = pb.finish() {
             let mut paint = Paint::default();
-            paint.set_color_rgba8(16, 16, 20, 215);
+            let [r, g, b] = style.background;
+            let alpha = (style.opacity.min(100) as u32 * 255 / 100) as u8;
+            paint.set_color_rgba8(r, g, b, alpha);
             paint.anti_alias = true;
             pixmap.fill_path(
                 &path,
@@ -70,11 +124,13 @@ impl Painter {
         }
     }
 
-    fn text(&mut self, pixmap: &mut Pixmap, text: &str, scale: f32) {
+    fn text(&mut self, pixmap: &mut Pixmap, text: &str, scale: f32, style: &Style) {
         let (w, h) = (pixmap.width() as f32, pixmap.height() as f32);
         let pad = 12.0 * scale;
-        // Start from a size that suits the box, shrink until the text fits.
-        let mut size = (h / 3.0).clamp(14.0 * scale, 34.0 * scale);
+        // A fixed size is used as is; otherwise start from one that suits the box and
+        // shrink until the text fits.
+        let fixed = style.font_size.map(|s| s * scale);
+        let mut size = fixed.unwrap_or_else(|| (h / 3.0).clamp(14.0 * scale, 34.0 * scale));
         let mut buffer = Buffer::new(&mut self.fonts, Metrics::new(size, size * 1.25));
         let attrs = Attrs::new().family(Family::SansSerif);
         let mut text_h = 0.0;
@@ -84,7 +140,7 @@ impl Painter {
             buffer.set_text(text, &attrs, Shaping::Advanced, Some(Align::Center));
             buffer.shape_until_scroll(&mut self.fonts, false);
             text_h = buffer.layout_runs().map(|r| r.line_height).sum::<f32>();
-            if text_h <= h - 2.0 * pad * 0.5 || size <= 10.0 * scale {
+            if fixed.is_some() || text_h <= h - 2.0 * pad * 0.5 || size <= 10.0 * scale {
                 break;
             }
             size *= 0.88;
@@ -93,6 +149,7 @@ impl Painter {
         let left = pad as i32;
         let data = pixmap.data_mut();
         let (pw, ph) = (w as i32, h as i32);
+        let fg = style.text_color();
         buffer.draw(
             &mut self.fonts,
             &mut self.glyphs,
@@ -108,11 +165,12 @@ impl Painter {
                         if px < 0 || py < 0 || px >= pw || py >= ph {
                             continue;
                         }
-                        // Source-over blend of white (premultiplied) onto the panel.
+                        // Source-over blend of the text colour (premultiplied) onto the panel.
                         let i = ((py * pw + px) * 4) as usize;
                         for c in 0..3 {
                             let dst = data[i + c] as u32;
-                            data[i + c] = (alpha * 255 / 255 + dst * (255 - alpha) / 255) as u8;
+                            data[i + c] =
+                                (fg[c] as u32 * alpha / 255 + dst * (255 - alpha) / 255) as u8;
                         }
                         let dst_a = data[i + 3] as u32;
                         data[i + 3] = (alpha + dst_a * (255 - alpha) / 255) as u8;
@@ -130,7 +188,7 @@ mod tests {
     #[test]
     fn empty_text_is_transparent() {
         let mut p = Painter::new();
-        let buf = p.render("  ", 200, 60, 1.0);
+        let buf = p.render("  ", 200, 60, 1.0, &Style::default());
         assert_eq!(buf.len(), 200 * 60 * 4);
         assert!(buf.iter().all(|&b| b == 0));
     }
@@ -138,7 +196,7 @@ mod tests {
     #[test]
     fn text_draws_a_panel_and_light_glyph_pixels() {
         let mut p = Painter::new();
-        let buf = p.render("The door is locked.", 400, 80, 1.0);
+        let buf = p.render("The door is locked.", 400, 80, 1.0, &Style::default());
         // The centre of the panel is opaque-ish dark…
         let centre = ((40 * 400 + 5) * 4) as usize;
         assert!(buf[centre + 3] > 150, "panel alpha");
@@ -150,5 +208,37 @@ mod tests {
             .filter(|px| px[0] > 200 && px[1] > 200 && px[2] > 200)
             .count();
         assert!(bright > 50, "glyph pixels: {bright}");
+    }
+
+    #[test]
+    fn light_background_gets_dark_text_and_zero_opacity_no_panel() {
+        let mut p = Painter::new();
+        let light = Style {
+            font_size: Some(24.0),
+            background: [250, 250, 250],
+            opacity: 100,
+        };
+        let buf = p.render("Hello", 300, 60, 1.0, &light);
+        let dark_glyphs = buf
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .filter(|px| px[0] < 60 && px[3] > 200)
+            .count();
+        assert!(dark_glyphs > 20, "dark glyph pixels: {dark_glyphs}");
+
+        let bare = Style {
+            opacity: 0,
+            ..Style::default()
+        };
+        let buf = p.render("Hello", 300, 60, 1.0, &bare);
+        // Corner (no glyph there) stays fully transparent.
+        assert_eq!(&buf[0..4], &[0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn parses_hex_colours() {
+        assert_eq!(Style::parse_color("#ff8000"), [255, 128, 0]);
+        assert_eq!(Style::parse_color("nope"), Style::default().background);
     }
 }

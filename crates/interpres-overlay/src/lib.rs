@@ -27,16 +27,37 @@ impl Region {
     }
 }
 
-/// Where the caption goes: right below the captured region, or above it when there
-/// is no room below. Never on top of the region, or the next capture would read
-/// the caption itself. `screen` is the monitor holding the region.
-pub fn caption_area(region: Region, screen: Region) -> Region {
+/// Where the caption goes relative to the captured region.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Placement {
+    /// Right below the region (above it when there is no room below).
+    Below,
+    /// Right above the region (below it when there is no room above).
+    Above,
+    /// A rectangle the user picked.
+    Custom(Region),
+}
+
+/// The caption rectangle. Below/above never overlap the region, or the next capture
+/// would read the caption itself. `screen` is the monitor holding the region.
+pub fn caption_area(region: Region, screen: Region, placement: Placement) -> Region {
     let height = region.height.clamp(48, 160);
     let below = region.bottom();
-    let y = if below + height as i32 <= screen.bottom() {
-        below
-    } else {
-        (region.y - height as i32).max(screen.y)
+    let above = region.y - height as i32;
+    let fits_below = below + height as i32 <= screen.bottom();
+    let fits_above = above >= screen.y;
+    let y = match placement {
+        Placement::Custom(area) => return area,
+        Placement::Below if fits_below || !fits_above => {
+            if fits_below {
+                below
+            } else {
+                above.max(screen.y)
+            }
+        }
+        Placement::Below => above,
+        Placement::Above if fits_above || !fits_below => above.max(screen.y),
+        Placement::Above => below,
     };
     Region {
         x: region.x,
@@ -69,7 +90,7 @@ mod tests {
             height: 120,
         };
         assert_eq!(
-            caption_area(r, SCREEN),
+            caption_area(r, SCREEN, Placement::Below),
             Region {
                 x: 300,
                 y: 720,
@@ -88,7 +109,7 @@ mod tests {
             height: 100,
         };
         assert_eq!(
-            caption_area(r, SCREEN),
+            caption_area(r, SCREEN, Placement::Below),
             Region {
                 x: 300,
                 y: 780,
@@ -106,13 +127,39 @@ mod tests {
             width: 400,
             height: 600,
         };
-        assert_eq!(caption_area(tall, SCREEN).height, 160);
+        assert_eq!(caption_area(tall, SCREEN, Placement::Below).height, 160);
         let thin = Region {
             x: 0,
             y: 0,
             width: 400,
             height: 20,
         };
-        assert_eq!(caption_area(thin, SCREEN).height, 48);
+        assert_eq!(caption_area(thin, SCREEN, Placement::Below).height, 48);
+    }
+
+    #[test]
+    fn above_and_custom_placement() {
+        let r = Region {
+            x: 300,
+            y: 600,
+            width: 800,
+            height: 120,
+        };
+        assert_eq!(caption_area(r, SCREEN, Placement::Above).y, 480);
+        // No room above: falls back to below.
+        let top = Region {
+            x: 0,
+            y: 10,
+            width: 400,
+            height: 60,
+        };
+        assert_eq!(caption_area(top, SCREEN, Placement::Above).y, 70);
+        let custom = Region {
+            x: 5,
+            y: 6,
+            width: 700,
+            height: 90,
+        };
+        assert_eq!(caption_area(r, SCREEN, Placement::Custom(custom)), custom);
     }
 }
