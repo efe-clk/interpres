@@ -232,6 +232,22 @@ Claude kodu ikilide yok; Claude kapatılınca çeviri DeepL'den gelir.
 **Bitti:** Örnek docx/pptx/xlsx/srt/md Claude ile çevrilir, Word/LibreOffice'te biçimi
 bozulmadan açılır, hiçbir segment atlanmaz.
 
+## Öneri: canlı transkript (karar bekliyor)
+
+Sistem sesini veya mikrofonu anında yazıya döküp çevirmek ve oyun katmanında göstermek.
+Araştırma ve önerilen yol: [research/canli-transkript.md](research/canli-transkript.md).
+
+## Açık işler (2026-11-20)
+
+- Windows'ta gerçek deneme: kurulum, oyun katmanı (Tauri pencereleri), bölge seçici.
+- GNOME Wayland'de layer-shell yok: katman ve seçici pencereye düşer, konumlanamaz.
+- Çoklu monitörde seçici yalnızca imlecin olduğu ekranda açılır.
+- Eğik/dikey metin OCR'da desteklenmiyor.
+- Paketler imzasız: Windows SmartScreen uyarısı verir.
+- Linux paketleri glibc 2.39 istiyor (Ubuntu 22.04 desteklenmiyor).
+- `shadcn` CLI'ın bağımlılığında orta seviye npm uyarısı (yalnızca geliştirme aracı).
+- Çeviri belleği kaydediliyor ama kullanılmıyor (Claude aşamasında bağlam olacak).
+
 ## Notlar ve riskler
 
 - Linux'ta `keyring` Secret Service ister (gnome-keyring veya KWallet çalışıyor olmalı).
