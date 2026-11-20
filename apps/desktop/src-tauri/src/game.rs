@@ -63,6 +63,8 @@ pub struct Frame {
 pub struct GameState {
     running: bool,
     error: Option<EngineError>,
+    /// Something the user should know that is not an error, e.g. `no_layer_shell`.
+    notice: Option<&'static str>,
 }
 
 #[derive(Serialize)]
@@ -141,6 +143,9 @@ async fn pick_with_window(app: &AppHandle) -> CmdResult<Option<(i32, i32, u32, u
             .resizable(false)
             .position(pos.x, pos.y)
             .inner_size(size.width, size.height)
+            // Full screen also where windows cannot be positioned (GNOME on Wayland),
+            // so the page's coordinates are the monitor's.
+            .fullscreen(true)
             .build()
             .map_err(invalid)?;
     let _ = window.set_focus();
@@ -187,6 +192,7 @@ pub fn toggle(app: &AppHandle) {
             GameState {
                 running: false,
                 error: Some(e),
+                notice: None,
             },
         );
     }
@@ -243,6 +249,7 @@ fn start(app: &AppHandle) -> CmdResult<()> {
         GameState {
             running: true,
             error: None,
+            notice: None,
         },
     );
     Ok(())
@@ -285,6 +292,7 @@ fn stop(app: &AppHandle) {
         GameState {
             running: false,
             error: None,
+            notice: None,
         },
     );
 }
@@ -303,7 +311,16 @@ impl Sink {
             match interpres_overlay::wayland::WaylandCaption::show(region, placement, style) {
                 Ok(c) => return Sink::Layer(c),
                 Err(e) => {
-                    tracing::info!(error = %e, "layer-shell caption unavailable, using a window")
+                    tracing::info!(error = %e, "layer-shell caption unavailable, using a window");
+                    // e.g. GNOME: the caption window cannot be placed next to the region.
+                    let _ = app.emit(
+                        STATE_EVENT,
+                        GameState {
+                            running: true,
+                            error: None,
+                            notice: Some("no_layer_shell"),
+                        },
+                    );
                 }
             }
         }
@@ -396,6 +413,7 @@ fn run(
                     GameState {
                         running: true,
                         error: Some(e),
+                        notice: None,
                     },
                 );
             }
@@ -406,6 +424,7 @@ fn run(
                     GameState {
                         running: true,
                         error: Some(EngineError::Service(e.to_string())),
+                        notice: None,
                     },
                 );
                 std::thread::sleep(Duration::from_secs(1));

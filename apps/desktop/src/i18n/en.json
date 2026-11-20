@@ -236,6 +236,9 @@
     "background": "Background",
     "opacity": "Opacity",
     "previewText": "The door is locked. You need the silver key.",
-    "lookHint": "Changes apply right away while the overlay runs."
+    "lookHint": "Changes apply right away while the overlay runs.",
+    "notice": {
+      "no_layer_shell": "This desktop cannot place the overlay next to the region (e.g. GNOME). The translation is shown in a separate window."
+    }
   }
 }

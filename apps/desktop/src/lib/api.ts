@@ -524,6 +524,8 @@ export interface GameFrame {
 export interface GameState {
   running: boolean
   error: ApiError | null
+  /** A non-error note, e.g. `no_layer_shell`. */
+  notice: string | null
 }
 
 async function listenTo<T>(event: string, cb: (payload: T) => void): Promise<() => void> {
@@ -578,13 +580,13 @@ export async function gameStatus(): Promise<boolean> {
 export async function gameStart(): Promise<void> {
   if (isTauri) return call('game_start')
   mockRunning = true
-  mockGameListeners.forEach((l) => l({ running: true, error: null }))
+  mockGameListeners.forEach((l) => l({ running: true, error: null, notice: null }))
 }
 
 export async function gameStop(): Promise<void> {
   if (isTauri) return call('game_stop')
   mockRunning = false
-  mockGameListeners.forEach((l) => l({ running: false, error: null }))
+  mockGameListeners.forEach((l) => l({ running: false, error: null, notice: null }))
 }
 
 export async function onGameFrame(cb: (f: GameFrame) => void): Promise<() => void> {

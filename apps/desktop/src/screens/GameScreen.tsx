@@ -32,6 +32,7 @@ export function GameScreen({ active }: { active: boolean }) {
   const [running, setRunning] = useState(false)
   const [frame, setFrame] = useState<api.GameFrame | null>(null)
   const [error, setError] = useState<api.ApiError | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const restartTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const game = settings?.game
 
@@ -51,6 +52,8 @@ export function GameScreen({ active }: { active: boolean }) {
       api.onGameState((s) => {
         setRunning(s.running)
         if (s.error) setError(s.error)
+        if (s.notice) setNotice(s.notice)
+        if (!s.running) setNotice(null)
       }),
     ]
     return () => offs.forEach((o) => void o.then((f) => f()))
@@ -274,6 +277,7 @@ export function GameScreen({ active }: { active: boolean }) {
         </section>
         {!running && blocker && <p className="text-xs text-muted-foreground">{blocker}</p>}
         {error && <ErrorNotice error={error} />}
+        {notice && <p className="text-xs text-muted-foreground">{t(`game.notice.${notice}`)}</p>}
 
         {running && (
           <section className="space-y-2 rounded-lg border border-border p-4">

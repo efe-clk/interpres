@@ -236,6 +236,9 @@
     "background": "Arka plan",
     "opacity": "Opaklık",
     "previewText": "Kapı kilitli. Gümüş bir anahtar gerekiyor.",
-    "lookHint": "Katman çalışırken yapılan değişiklikler hemen uygulanır."
+    "lookHint": "Katman çalışırken yapılan değişiklikler hemen uygulanır.",
+    "notice": {
+      "no_layer_shell": "Bu masaüstü katmanı bölgenin yanına yerleştiremiyor (ör. GNOME). Çeviri ayrı bir pencerede gösteriliyor."
+    }
   }
 }
