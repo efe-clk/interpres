@@ -36,7 +36,7 @@ impl Painter {
         }
         // tiny-skia stores premultiplied RGBA; Wayland wants BGRA.
         let mut out = pixmap.take();
-        for px in out.chunks_exact_mut(4) {
+        for px in out.as_chunks_mut::<4>().0 {
             px.swap(0, 2);
         }
         out
@@ -144,7 +144,9 @@ mod tests {
         assert!(buf[centre + 3] > 150, "panel alpha");
         // …and some pixels are bright (the glyphs).
         let bright = buf
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .filter(|px| px[0] > 200 && px[1] > 200 && px[2] > 200)
             .count();
         assert!(bright > 50, "glyph pixels: {bright}");

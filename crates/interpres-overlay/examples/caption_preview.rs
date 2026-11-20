@@ -7,7 +7,7 @@ fn main() {
     let a: Vec<String> = std::env::args().skip(1).collect();
     let (w, h, scale) = (1280u32, 170u32, 2.0f32);
     let mut bgra = Painter::new().render(&a[1], w, h, scale);
-    for px in bgra.chunks_exact_mut(4) {
+    for px in bgra.as_chunks_mut::<4>().0 {
         px.swap(0, 2);
     }
     // Composite over grey so the panel edges are visible.
