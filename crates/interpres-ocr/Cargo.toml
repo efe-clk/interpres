@@ -1,0 +1,22 @@
+[package]
+name = "interpres-ocr"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+directories.workspace = true
+image.workspace = true
+ort.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+yaml-rust2.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+wiremock.workspace = true
