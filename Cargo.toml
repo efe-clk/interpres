@@ -15,6 +15,7 @@ interpres-engine-claude = { path = "crates/interpres-engine-claude" }
 interpres-docs = { path = "crates/interpres-docs" }
 interpres-daemon = { path = "crates/interpres-daemon" }
 interpres-ocr = { path = "crates/interpres-ocr" }
+interpres-overlay = { path = "crates/interpres-overlay" }
 rmcp = { version = "3.11", default-features = false, features = ["server", "macros", "transport-io"] }
 anyhow = "1"
 async-trait = "0.1"
@@ -24,6 +25,7 @@ directories = "6"
 futures = "0.3"
 image = { version = "0.25", default-features = false, features = ["png"] }
 keyring = "4"
+libwayshot-xcap = "0.3.3"
 ort = "=2.0.0-rc.15"
 rusqlite = { version = "0.43", features = ["bundled"] }
 reqwest = { version = "0.13", default-features = false, features = ["rustls", "http2", "json", "query", "multipart"] }
@@ -37,6 +39,7 @@ toml = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 wiremock = "0.6"
+xcap = "0.9.10"
 yaml-rust2 = "0.13"
 tauri = "2"
 tauri-build = "2"

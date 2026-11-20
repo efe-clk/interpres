@@ -1,0 +1,23 @@
+[package]
+name = "interpres-overlay"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+image.workspace = true
+interpres-core.workspace = true
+interpres-ocr.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+xcap.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libwayshot-xcap.workspace = true
+
+[dev-dependencies]
+interpres-engine-deepl.workspace = true
+async-trait.workspace = true
