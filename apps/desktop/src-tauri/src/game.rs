@@ -10,7 +10,7 @@ use std::time::Duration;
 use interpres_core::{EngineError, EngineId, Settings, Store, Translator, secrets};
 use interpres_engine_deepl::DeeplEngine;
 use interpres_ocr::{Ocr, RecModel, models};
-use interpres_overlay::caption::Style;
+use interpres_overlay::caption::{Style, VAlign};
 use interpres_overlay::pipeline::OverlayError;
 use interpres_overlay::{Pipeline, Placement, Region, caption_area, default_capture};
 use serde::Serialize;
@@ -264,6 +264,12 @@ fn caption_look(c: &interpres_core::CaptionStyle) -> (Placement, Style) {
         font_size: c.font_size.map(|s| s as f32),
         background: Style::parse_color(&c.background),
         opacity: c.opacity.min(100),
+        // Keep the panel next to the subtitle it translates.
+        valign: match placement {
+            Placement::Below => VAlign::Top,
+            Placement::Above => VAlign::Bottom,
+            Placement::Custom(_) => VAlign::Center,
+        },
     };
     (placement, style)
 }

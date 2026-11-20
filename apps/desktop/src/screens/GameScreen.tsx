@@ -250,10 +250,12 @@ export function GameScreen({ active }: { active: boolean }) {
             className="rounded-lg p-4"
             style={{ background: 'linear-gradient(135deg, #2a3a5a, #5a3a2a 50%, #2a5a3a)' }}
           >
-            <div className="flex min-h-16 items-center justify-center rounded-[10px] px-3 py-2 text-center" style={css.panel}>
-              <p className="text-xl leading-snug" style={css.text}>
-                {t('game.previewText')}
-              </p>
+            <div className="flex justify-center">
+              <div className="max-w-full rounded-[8px] px-3.5 py-2 text-center" style={css.panel}>
+                <p className="text-xl leading-snug" style={css.text}>
+                  {t('game.previewText')}
+                </p>
+              </div>
             </div>
           </div>
           <p className="text-xs text-muted-foreground">{t('game.lookHint')}</p>

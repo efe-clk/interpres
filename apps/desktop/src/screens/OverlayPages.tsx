@@ -78,11 +78,15 @@ export function CaptionPage() {
 
   if (!text) return null
   const css = captionCss(style)
+  // The panel wraps the text and sits next to the subtitle it translates.
+  const align = style.placement === 'below' ? 'items-start' : style.placement === 'above' ? 'items-end' : 'items-center'
   return (
-    <div className="fixed inset-0 flex items-center justify-center rounded-xl px-4 text-center" style={css.panel}>
-      <p className="text-[clamp(14px,4.5vh,30px)] leading-snug font-medium" style={css.text}>
-        {text}
-      </p>
+    <div className={`fixed inset-0 flex justify-center ${align}`}>
+      <div className="max-w-full rounded-[8px] px-3.5 py-2 text-center" style={css.panel}>
+        <p className="text-[clamp(14px,4.5vh,30px)] leading-snug font-medium" style={css.text}>
+          {text}
+        </p>
+      </div>
     </div>
   )
 }

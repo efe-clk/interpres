@@ -22,7 +22,7 @@ mod linux {
     use interpres_core::{EngineId, Store, Translator, secrets};
     use interpres_engine_deepl::DeeplEngine;
     use interpres_ocr::{Ocr, RecModel, models};
-    use interpres_overlay::caption::Style;
+    use interpres_overlay::caption::{Style, VAlign};
     use interpres_overlay::wayland::{WaylandCaption, pick_region};
     use interpres_overlay::{Pipeline, Placement, Region, default_capture};
 
@@ -60,6 +60,11 @@ mod linux {
                 .map_or(Style::default().background, |c| Style::parse_color(c)),
             opacity: a.get(9).and_then(|o| o.parse().ok()).unwrap_or(85),
             font_size: a.get(10).and_then(|f| f.parse().ok()),
+            valign: if placement == Placement::Above {
+                VAlign::Bottom
+            } else {
+                VAlign::Top
+            },
         };
         let caption = WaylandCaption::show(region, placement, style)?;
         let end = Instant::now() + Duration::from_secs(n(6) as u64);
