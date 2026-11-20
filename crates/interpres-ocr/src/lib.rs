@@ -2,8 +2,8 @@
 //! ONNX Runtime, which is linked into the binary (users install nothing).
 //!
 //! Pipeline: detect text regions ([`det`]), cut each one out, read it ([`rec`]).
-//! Boxes are axis-aligned: game subtitles and UI text are horizontal, so rotated
-//! text is not handled.
+//! Boxes are axis-aligned: horizontal and vertical lines are read; text at other
+//! angles is not handled.
 
 pub mod det;
 pub mod models;
@@ -49,6 +49,9 @@ pub struct TextLine {
     /// Position in the input image: x, y, width, height.
     pub bbox: [u32; 4],
 }
+
+/// A text box this many times taller than wide is read as a vertical line.
+const VERTICAL_RATIO: f32 = 1.5;
 
 /// Lines below this confidence are dropped.
 const MIN_LINE_SCORE: f32 = 0.5;
@@ -113,6 +116,13 @@ impl Ocr {
         for bbox in boxes {
             let crop =
                 image::imageops::crop_imm(img, bbox[0], bbox[1], bbox[2], bbox[3]).to_image();
+            // A tall box is a vertical line (common in Japanese and Chinese games):
+            // turn it on its side so it reads left to right, as PaddleOCR does.
+            let crop = if bbox[3] as f32 >= bbox[2] as f32 * VERTICAL_RATIO {
+                image::imageops::rotate270(&crop)
+            } else {
+                crop
+            };
             let input = rec::preprocess(&crop);
             let name = self.rec.inputs()[0].name().to_string();
             let tensor = Tensor::from_array(([1usize, 3, rec::HEIGHT, input.width], input.data))?;

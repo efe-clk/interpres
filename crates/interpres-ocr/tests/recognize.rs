@@ -40,6 +40,13 @@ fn reads_english_japanese_and_turkish_subtitles() {
 }
 
 #[test]
+fn reads_vertical_japanese() {
+    if let Some(lines) = read(RecModel::General, "ja_vertical") {
+        assert_eq!(lines, ["扉は鍵がかかっている"]);
+    }
+}
+
+#[test]
 fn missing_models_are_reported() {
     let err = Ocr::load(std::path::Path::new("/nonexistent"), RecModel::General).err();
     assert!(matches!(err, Some(interpres_ocr::OcrError::NotInstalled)));
