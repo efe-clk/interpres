@@ -6,17 +6,20 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+cosmic-text.workspace = true
 image.workspace = true
 interpres-core.workspace = true
 interpres-ocr.workspace = true
 serde.workspace = true
 thiserror.workspace = true
+tiny-skia.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 xcap.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libwayshot-xcap.workspace = true
+smithay-client-toolkit.workspace = true
 
 [dev-dependencies]
 interpres-engine-deepl.workspace = true

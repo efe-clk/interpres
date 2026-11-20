@@ -20,6 +20,7 @@ rmcp = { version = "3.11", default-features = false, features = ["server", "macr
 anyhow = "1"
 async-trait = "0.1"
 clap = { version = "4", features = ["derive"] }
+cosmic-text = "0.19"
 csv = "1"
 directories = "6"
 futures = "0.3"
@@ -31,10 +32,12 @@ rusqlite = { version = "0.43", features = ["bundled"] }
 reqwest = { version = "0.13", default-features = false, features = ["rustls", "http2", "json", "query", "multipart"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+smithay-client-toolkit = "0.21.1"
 sha2 = "0.11"
 thiserror = "2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "io-std", "io-util", "fs", "sync", "time", "net", "signal"] }
 tokio-util = "0.7"
+tiny-skia = "0.12"
 toml = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

@@ -3,6 +3,7 @@
 //!
 //! Only screen capture + OCR: nothing is injected into or read from the game.
 
+pub mod caption;
 pub mod capture;
 pub mod change;
 pub mod pipeline;
