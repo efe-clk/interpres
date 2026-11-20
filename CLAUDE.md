@@ -68,7 +68,8 @@ Kullanıcı kod bilmiyor. Kodu Claude yazar; derleme, test ve arayüz kontrolün
   (ONNX Runtime, ikiliye statik gömülü) ile. Kullanıcı bir şey kurmaz; modeller ilk
   kullanımda Hugging Face'ten sabit commit'ten indirilir ve SHA-256 ile doğrulanır
   (`<data dir>/interpres/models`). Tanıma modelleri: genel (zh/ja/en), Korece, Latin
-  (Türkçe dahil). Kutular eksene hizalı; eğik metin desteklenmez.
+  (Türkçe dahil). Kutular eksene hizalı: yatay ve dikey satırlar okunur (uzun-dar kutu
+  90° döndürülür, üst üste parçalar birleştirilir); açılı metin desteklenmez.
 - Yakalama: wlroots derleyicilerde (Hyprland, Sway) screencopy doğrudan (libwayshot, ~7 ms,
   izin sormaz); diğerlerinde `xcap`.
 - Katman ve bölge seçici: Wayland'de saf Rust layer-shell yüzeyleri (smithay-client-toolkit,

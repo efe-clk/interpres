@@ -237,15 +237,17 @@ bozulmadan açılır, hiçbir segment atlanmaz.
 Sistem sesini veya mikrofonu anında yazıya döküp çevirmek ve oyun katmanında göstermek.
 Araştırma ve önerilen yol: [research/canli-transkript.md](research/canli-transkript.md).
 
-## Açık işler (2026-11-20)
+## Açık işler (2026-11-20, güncelleme 2026-11-21)
+
+Kapatılanlar: çoklu monitörde bölge seçici (her ekranda açılır, tek monitörde denendi),
+npm uyarısı (`minimatch` zorlandı), dikey metin OCR'ı.
 
 - Windows'ta gerçek deneme: kurulum, oyun katmanı (Tauri pencereleri), bölge seçici.
-- GNOME Wayland'de layer-shell yok: katman ve seçici pencereye düşer, konumlanamaz.
-- Çoklu monitörde seçici yalnızca imlecin olduğu ekranda açılır.
-- Eğik/dikey metin OCR'da desteklenmiyor.
+- GNOME Wayland'de layer-shell yok: seçici tam ekran pencereyle çalışır; çeviri ayrı bir
+  pencerede gösterilir ve konumlanamaz (kullanıcıya bildirilir). GNOME'da denenmedi.
+- Açılı (eğik) metin OCR'da desteklenmiyor; yatay ve dikey destekleniyor.
 - Paketler imzasız: Windows SmartScreen uyarısı verir.
 - Linux paketleri glibc 2.39 istiyor (Ubuntu 22.04 desteklenmiyor).
-- `shadcn` CLI'ın bağımlılığında orta seviye npm uyarısı (yalnızca geliştirme aracı).
 - Çeviri belleği kaydediliyor ama kullanılmıyor (Claude aşamasında bağlam olacak).
 
 ## Notlar ve riskler
