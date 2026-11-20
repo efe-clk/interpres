@@ -30,6 +30,35 @@ pub struct GameSettings {
     pub source_lang: Option<String>,
     /// `None` falls back to the main target language.
     pub target_lang: Option<String>,
+    pub caption: CaptionStyle,
+}
+
+/// How the translated caption looks and where it goes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct CaptionStyle {
+    /// `below` or `above` the captured region, or `custom` (uses `area`).
+    pub placement: String,
+    /// Caption rectangle for `custom`: x, y, width, height (logical screen coordinates).
+    pub area: Option<(i32, i32, u32, u32)>,
+    /// Text size in logical pixels; `None` fits the text to the box.
+    pub font_size: Option<u32>,
+    /// Background colour as `#rrggbb`.
+    pub background: String,
+    /// Background opacity, 0–100.
+    pub opacity: u8,
+}
+
+impl Default for CaptionStyle {
+    fn default() -> Self {
+        Self {
+            placement: "below".into(),
+            area: None,
+            font_size: None,
+            background: "#101014".into(),
+            opacity: 85,
+        }
+    }
 }
 
 impl Default for GameSettings {
@@ -39,6 +68,7 @@ impl Default for GameSettings {
             ocr_model: "general".into(),
             source_lang: None,
             target_lang: None,
+            caption: CaptionStyle::default(),
         }
     }
 }
@@ -199,6 +229,13 @@ mod tests {
                 ocr_model: "latin".into(),
                 source_lang: None,
                 target_lang: Some("TR".into()),
+                caption: CaptionStyle {
+                    placement: "custom".into(),
+                    area: Some((0, 900, 1600, 100)),
+                    font_size: Some(28),
+                    background: "#ffffff".into(),
+                    opacity: 40,
+                },
             },
         };
         s.save(&p).unwrap();
