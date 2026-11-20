@@ -98,8 +98,8 @@ Sürümler yalnızca büyük değişikliklerde ve kullanıcı onayıyla yayımla
 Aşağıdaki sürüm numaraları yalnızca yön gösterir.
 
 Sıra: önce açık kalan işler, sonra çekirdeği dışarı açan servisler (MCP, daemon), sonra
-en büyük iş olan oyun katmanı, sonra platformlar. Claude en sonda (kullanıcı kararı,
-2026-11-20). Her aşamanın başında, o aşamadaki açık karar soruları kullanıcıya sorulur.
+en büyük iş olan oyun katmanı, sonra canlı ses çevirisi, sonra Android. Claude en sonda
+(kullanıcı kararı, 2026-11-20). macOS yol haritasından çıkarıldı (kullanıcı kararı, 2026-11-21). Her aşamanın başında, o aşamadaki açık karar soruları kullanıcıya sorulur.
 
 ## [x] M8 — v0.2: Açık işler ve cila
 
@@ -180,14 +180,48 @@ okunup çevrilir ve katmanda gösterilir.
 > gösterilen Japonca altyazı → Türkçe katman). Windows yolu (Tauri pencereleri, xcap)
 > CI'da derleniyor ama gerçek bir Windows makinesinde denenmedi.
 
-## [ ] M12 — macOS
+## [ ] M12 — Canlı ses çevirisi (plan, onay bekliyor)
 
-- CI'ya macOS derlemesi; `.dmg` paketi; keyring Keychain ile.
-- İmzalama ve notarization için Apple geliştirici hesabı gerekir; bu aşamanın başında
-  sorulur. Hesap yoksa imzasız paket.
-- Oyun katmanının macOS desteği (ScreenCaptureKit + Vision OCR) ayrıca değerlendirilir.
+Oyundaki/videodaki konuşmayı (sistem sesi) ya da mikrofonu dinleyip konuşma bitince yazıya
+dökmek, çevirmek ve altyazı kutusunda göstermek. Ses makineden çıkmaz; yalnızca tanınan metin
+çeviri motoruna (DeepL) gider. Ölçümler: [research/canli-transkript.md](research/canli-transkript.md).
 
-**Bitti:** macOS'ta uygulama ve CLI kurulup çalışır; paket sürüme eklenir.
+Kararlar (öneri):
+- Tanıma: `whisper-rs` (whisper.cpp). sherpa-onnx elendi: kendi ONNX Runtime'ı `ort` ile
+  aynı ikilide çakışıyor (denendi). whisper.cpp ile `ort` birlikte çalışıyor (denendi).
+- Sessizlik algılama (VAD): Silero VAD, mevcut `ort` ile.
+- Modeller OCR'daki gibi ilk kullanımda Hugging Face'ten sabit commit'ten indirilir, SHA-256
+  ile doğrulanır. Varsayılan `base` (148 MB, işlemcide ~0,8 sn); daha doğru `small` ayardan.
+  Büyük model (`large-v3-turbo`) işlemcide çok yavaş (4,5 sn ses için 14 sn); ekran kartı
+  desteği gelene kadar sunulmaz.
+
+Adımlar:
+1. `crates/interpres-speech`: ses yakalama (`cpal`; Linux'ta PipeWire, sistem sesi için
+   hoparlörün "monitor" kaynağı; Windows'ta WASAPI loopback), 16 kHz mono'ya dönüştürme,
+   VAD ile konuşma parçalarına bölme.
+   → Doğrulama: kayıtlı örnek seste parça sınırları testleri; canlı sistem sesi denemesi.
+2. Tanıma + uydurma cümle süzgeci (dikte'den: gürültü tabanının 10 dB altı ve -55 dBFS
+   altı atılır; "Altyazı M.K." / "Thanks for watching" listesi). Sözlük terimleri Whisper'a
+   ipucu (prompt) olarak verilir. 10 dk kullanılmazsa model bellekten bırakılır.
+   → Doğrulama: örnek ses dosyalarıyla tanıma testleri (model yoksa atlanır, OCR gibi).
+3. Hat: konuşma parçası → `Translator` (önbellek, sözlük) → altyazı. Altyazı bölge yerine
+   ekranın altına yerleşir (yeni yerleşim). CLI: `interpres listen --to tr [--mic]`.
+   → Doğrulama: CLI ile video sesinden canlı çeviri; konuşma sonu → altyazı < 2 sn.
+4. Arayüz: "Oyun" ekranında kaynak seçimi "Ekran (OCR)" / "Ses"; Ayarlar'da ses kaynağı,
+   konuşma dili (otomatik ya da sabit), model ve indirme durumu. Kısayol bu adımda sorulur.
+   → Doğrulama: `npm run build`, arayüzde boş/yükleniyor/hata/başarılı durumlar.
+5. Belgeler (README, CLAUDE.md), CI'da yeni sistem bağımlılıkları (cmake, libclang).
+
+**Bitti:** Hyprland'de bir videonun sesi canlı olarak çevrilip altyazıda görünür; mikrofon da
+çalışır; testler, clippy ve arayüz derlemesi geçer; Windows CI derlemesi geçer.
+
+Riskler:
+- Türkçe doğruluğu `base` ile zayıf olabilir (yapay sesle denendi; gerçek konuşmayla 1.
+  adımda ölçülür). Gerekirse varsayılan `small` olur.
+- Ekran kartı (Vulkan) derlemesi denemede kurulmadı; ayrı bir iş olarak sonra bakılır.
+- Sistem sesini `cpal` ile yakalamak Linux'ta PipeWire monitor kaynağına bağlı; olmazsa
+  doğrudan PipeWire kütüphanesi kullanılır.
+- Konuşma "cümle bitince" çevrilir; kelime kelime akış yok (gecikme cümle başına ~1–2 sn).
 
 ## [ ] M13 — Android
 
@@ -231,11 +265,6 @@ Claude kodu ikilide yok; Claude kapatılınca çeviri DeepL'den gelir.
 
 **Bitti:** Örnek docx/pptx/xlsx/srt/md Claude ile çevrilir, Word/LibreOffice'te biçimi
 bozulmadan açılır, hiçbir segment atlanmaz.
-
-## Öneri: canlı transkript (karar bekliyor)
-
-Sistem sesini veya mikrofonu anında yazıya döküp çevirmek ve oyun katmanında göstermek.
-Araştırma ve önerilen yol: [research/canli-transkript.md](research/canli-transkript.md).
 
 ## Açık işler (2026-11-20, güncelleme 2026-11-21)
 

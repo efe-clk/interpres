@@ -52,10 +52,19 @@ OCR'ının ses karşılığı; mevcut katman, önbellek ve sözlük aynen kullan
   cümle başına ~0,5–2 sn.
 - Örnekleme hızı dönüştürücü ve mikrofon için `cpal` örnekleri mevcut.
 
-**Risk:** sherpa-onnx kendi ONNX Runtime kopyasını getiriyor; Interpres'te zaten gömülü
-`ort` ile aynı ikilide sembol çakışması olabilir. İlk iş küçük bir deneme ikilisinde ikisini
-birlikte bağlamak. Çakışırsa seçenekler: Whisper ONNX modelini doğrudan `ort` ile çalıştırmak
-(daha fazla kod) ya da konuşma tanımayı ayrı bir süreçte (daemon gibi) çalıştırmak.
+**Deneme sonucu (2026-11-21):** sherpa-onnx 2.0.2 ile `ort` aynı ikilide bağlanıyor ama
+çalışırken `ort` açılamıyor ("Failed to initialize ORT API"); `ort` tek başına çalışıyor.
+sherpa-onnx bu yüzden elendi. Yerine `whisper-rs` 0.16 (whisper.cpp, ONNX Runtime yok) denendi;
+`ort` ile birlikte sorunsuz. espeak-ng ile üretilen yapay sesle, işlemcide (8 iş parçacığı):
+
+| Model | Boyut | İngilizce 4,0 sn | Türkçe 4,5 sn | Türkçe sonuç |
+|---|---|---|---|---|
+| base | 148 MB | 0,7 sn, kusursuz | 0,8 sn | ilk cümle doğru, ikincisi bozuk |
+| large-v3-turbo q5 | 574 MB | 13,5 sn, kusursuz | 14 sn | daha iyi ama yine hatalı |
+
+Dil "otomatik" seçilince Türkçe yanlış algılandı ve süre ikiye katlandı; dil ayardan sabit
+verilmeli (otomatik isteğe bağlı). Yapay ses gerçek konuşmadan kötü; Türkçe doğruluk gerçek
+kayıtla yeniden ölçülecek. Vulkan (ekran kartı) özelliği derleme betiğinde hata verdi.
 
 **Ses yakalama:**
 - Linux: PipeWire'da hoparlör çıkışının "monitor" kaynağı (sistem sesi) ve mikrofon.
