@@ -1,5 +1,5 @@
-//! API keys stored in the OS credential store (Secret Service, Windows Credential
-//! Manager, Keychain). Keys never touch the settings file or logs.
+//! API keys stored in the OS credential store (Secret Service on Linux, Windows
+//! Credential Manager). Keys never touch the settings file or logs.
 
 use crate::EngineId;
 

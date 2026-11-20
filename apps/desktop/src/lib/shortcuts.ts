@@ -1,4 +1,4 @@
-// Shortcut combos are stored as `mod+shift+k` (`mod` is Ctrl, or Cmd on macOS).
+// Shortcut combos are stored as `mod+shift+k` (`mod` is Ctrl).
 
 import type { Shortcuts } from '@/lib/api'
 

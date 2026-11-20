@@ -19,7 +19,7 @@ Kullanıcı kod bilmiyor. Kodu Claude yazar; derleme, test ve arayüz kontrolün
 
 - Dil: Rust (workspace). Masaüstü: Tauri v2.
 - Arayüz: React + TypeScript + Tailwind + shadcn/ui, ikonlar lucide-react.
-- Platformlar (v1): Linux (önce Wayland, X11 de çalışır) ve Windows. Sonra macOS, Android.
+- Platformlar (v1): Linux (önce Wayland, X11 de çalışır) ve Windows. Sonra Android.
 - Lisans: AGPL-3.0.
 - Async: tokio. Seri hâle getirme: serde. Hatalar: kütüphanelerde `thiserror`,
   uygulama/CLI katmanında `anyhow`. Günlük: `tracing`.

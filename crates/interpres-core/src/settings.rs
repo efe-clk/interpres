@@ -84,7 +84,7 @@ pub struct UiSettings {
     pub shortcuts: Shortcuts,
 }
 
-/// Keyboard shortcuts as `mod+shift+k` (`mod` is Ctrl, or Cmd on macOS).
+/// Keyboard shortcuts as `mod+shift+k` (`mod` is Ctrl).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Shortcuts {

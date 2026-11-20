@@ -3,7 +3,7 @@ import { eventKey } from '@/lib/shortcuts'
 
 /**
  * Binds a keyboard shortcut such as `mod+k`, `mod+enter`, `mod+shift+s`, `escape`.
- * `mod` is Ctrl (or Cmd on macOS).
+ * `mod` is Ctrl.
  */
 export function useHotkey(combo: string, handler: (e: KeyboardEvent) => void, enabled = true) {
   const ref = useRef(handler)

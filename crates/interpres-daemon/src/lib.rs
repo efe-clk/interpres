@@ -4,7 +4,7 @@
 //! The glossary, cache and history live in the SQLite file, which every process
 //! already shares safely, so only the queue moves here.
 //!
-//! Transport: a Unix socket on Linux/macOS, a named pipe on Windows. Messages are
+//! Transport: a Unix socket on Linux, a named pipe on Windows. Messages are
 //! newline-delimited JSON (see [`protocol`]).
 
 pub mod client;
