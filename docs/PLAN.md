@@ -186,39 +186,56 @@ Oyundaki/videodaki konuşmayı (sistem sesi) ya da mikrofonu dinleyip konuşma b
 dökmek, çevirmek ve altyazı kutusunda göstermek. Ses makineden çıkmaz; yalnızca tanınan metin
 çeviri motoruna (DeepL) gider. Ölçümler: [research/canli-transkript.md](research/canli-transkript.md).
 
-Kararlar (öneri):
+Kararlar (öneri, 2026-11-25'te ölçümlerle güncellendi):
 - Tanıma: `whisper-rs` (whisper.cpp). sherpa-onnx elendi: kendi ONNX Runtime'ı `ort` ile
   aynı ikilide çakışıyor (denendi). whisper.cpp ile `ort` birlikte çalışıyor (denendi).
+  Paketle gelen bağlamalar kullanılır (`WHISPER_DONT_GENERATE_BINDINGS`); libclang gerekmez.
+- **Ekran kartı bu aşamanın içinde.** Gerçek Türkçe konuşmada (FLEURS, 6 cümle, 60 sn)
+  kelime hata oranı: `base` %37,5, `small` %26, `large-v3-turbo` %8,7. Turbo işlemcide
+  kullanılamayacak kadar yavaş, ekran kartında (RTX 4070, CUDA) gerçek zamandan 36 kat hızlı.
+- Model seçimi donanıma göre: ekran kartı varsa `large-v3-turbo` (574 MB), yoksa `small`
+  (488 MB, işlemcide gerçek zamandan ~4 kat hızlı). `base` sunulmaz. Ayardan değiştirilebilir.
+- Ekran kartı yolu: dağıtılan pakette CUDA kütüphanelerine sabit bağ olursa NVIDIA'sız
+  makinede uygulama hiç açılmaz. Bu yüzden tanıma, ana uygulamadan ayrı küçük bir yardımcı
+  süreçte çalışır (`interpres-speech`); ekran kartlı sürümü açılamazsa işlemci sürümüne düşülür.
+  Pakette Vulkan (NVIDIA/AMD/Intel, ek kurulum yok) mı CUDA mı kullanılacağı 1. adımda
+  Vulkan da ölçülünce kesinleşir (Vulkan için yerelde `vulkan-headers` paketi gerekiyor).
 - Sessizlik algılama (VAD): Silero VAD, mevcut `ort` ile.
 - Modeller OCR'daki gibi ilk kullanımda Hugging Face'ten sabit commit'ten indirilir, SHA-256
-  ile doğrulanır. Varsayılan `base` (148 MB, işlemcide ~0,8 sn); daha doğru `small` ayardan.
-  Büyük model (`large-v3-turbo`) işlemcide çok yavaş (4,5 sn ses için 14 sn); ekran kartı
-  desteği gelene kadar sunulmaz.
+  ile doğrulanır.
+- **Çift dilli altyazı:** üstte orijinal metin (küçük, soluk), altta çeviri. Ayardan
+  kapatılabilir; varsayılan açık. Oyun (OCR) altyazısında da aynı ayar kullanılır.
 
 Adımlar:
-1. `crates/interpres-speech`: ses yakalama (`cpal`; Linux'ta PipeWire, sistem sesi için
+1. Ekran kartı ölçümü ve karar: Vulkan ile CUDA aynı örneklerle karşılaştırılır; yardımcı
+   süreç + işlemciye düşme denemesi (ekran kartı yokmuş gibi çalıştırarak).
+   → Doğrulama: ölçüm tablosu `docs/research/canli-transkript.md`'de; düşme yolu çalışır.
+2. `crates/interpres-speech`: ses yakalama (`cpal`; Linux'ta PipeWire, sistem sesi için
    hoparlörün "monitor" kaynağı; Windows'ta WASAPI loopback), 16 kHz mono'ya dönüştürme,
-   VAD ile konuşma parçalarına bölme.
-   → Doğrulama: kayıtlı örnek seste parça sınırları testleri; canlı sistem sesi denemesi.
-2. Tanıma + uydurma cümle süzgeci (dikte'den: gürültü tabanının 10 dB altı ve -55 dBFS
-   altı atılır; "Altyazı M.K." / "Thanks for watching" listesi). Sözlük terimleri Whisper'a
-   ipucu (prompt) olarak verilir. 10 dk kullanılmazsa model bellekten bırakılır.
-   → Doğrulama: örnek ses dosyalarıyla tanıma testleri (model yoksa atlanır, OCR gibi).
-3. Hat: konuşma parçası → `Translator` (önbellek, sözlük) → altyazı. Altyazı bölge yerine
-   ekranın altına yerleşir (yeni yerleşim). CLI: `interpres listen --to tr [--mic]`.
+   VAD ile konuşma parçalarına bölme; tanıma; uydurma cümle süzgeci (dikte'den: -55 dBFS
+   altı ve gürültü tabanına yakın ses atılır; "Altyazı M.K." / "Thanks for watching"
+   listesi); sözlük terimleri Whisper'a ipucu olarak verilir; 10 dk kullanılmazsa model
+   bellekten bırakılır.
+   → Doğrulama: FLEURS örnekleriyle tanıma testi (model yoksa atlanır, OCR gibi), VAD ve
+   süzgeç birim testleri, canlı sistem sesi denemesi.
+3. Hat: konuşma parçası → `Translator` (önbellek, sözlük) → çift dilli altyazı. Altyazı
+   bölge yerine ekranın altına yerleşir (yeni yerleşim). CLI: `interpres listen --to tr [--mic]`.
    → Doğrulama: CLI ile video sesinden canlı çeviri; konuşma sonu → altyazı < 2 sn.
 4. Arayüz: "Oyun" ekranında kaynak seçimi "Ekran (OCR)" / "Ses"; Ayarlar'da ses kaynağı,
-   konuşma dili (otomatik ya da sabit), model ve indirme durumu. Kısayol bu adımda sorulur.
+   konuşma dili (sabit; otomatik isteğe bağlı), model, ekran kartı durumu, indirme durumu,
+   "orijinali göster". Kısayol bu adımda sorulur.
    → Doğrulama: `npm run build`, arayüzde boş/yükleniyor/hata/başarılı durumlar.
-5. Belgeler (README, CLAUDE.md), CI'da yeni sistem bağımlılıkları (cmake, libclang).
+5. Belgeler (README, CLAUDE.md), CI'da yeni sistem bağımlılıkları (cmake; ekran kartı
+   sürümü için Vulkan ya da CUDA araçları).
 
-**Bitti:** Hyprland'de bir videonun sesi canlı olarak çevrilip altyazıda görünür; mikrofon da
-çalışır; testler, clippy ve arayüz derlemesi geçer; Windows CI derlemesi geçer.
+**Bitti:** Hyprland'de bir videonun sesi canlı olarak çevrilip çift dilli altyazıda
+görünür; ekran kartıyla turbo model, ekran kartı yokken `small` çalışır; mikrofon da çalışır;
+testler, clippy ve arayüz derlemesi geçer; Windows CI derlemesi geçer.
 
 Riskler:
-- Türkçe doğruluğu `base` ile zayıf olabilir (yapay sesle denendi; gerçek konuşmayla 1.
-  adımda ölçülür). Gerekirse varsayılan `small` olur.
-- Ekran kartı (Vulkan) derlemesi denemede kurulmadı; ayrı bir iş olarak sonra bakılır.
+- Vulkan hızı henüz ölçülmedi; CUDA'dan çok yavaşsa pakette hangi yolun kullanılacağı
+  kullanıcıya sorulur.
+- CUDA paketi büyük (cuBLAS yüzlerce MB); pakete gömülürse indirme boyutu artar.
 - Sistem sesini `cpal` ile yakalamak Linux'ta PipeWire monitor kaynağına bağlı; olmazsa
   doğrudan PipeWire kütüphanesi kullanılır.
 - Konuşma "cümle bitince" çevrilir; kelime kelime akış yok (gecikme cümle başına ~1–2 sn).

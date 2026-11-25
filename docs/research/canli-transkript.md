@@ -75,3 +75,23 @@ kayıtla yeniden ölçülecek. Vulkan (ekran kartı) özelliği derleme betiğin
 2. `crates/interpres-speech`: ses yakalama + VAD + tanıma + uydurma cümle filtresi.
 3. Katmana bağlama: "Oyun" ekranında kaynak olarak "ekran (OCR)" ya da "ses" seçimi.
 4. Mikrofon için dikte benzeri dikte/çeviri kısayolu (isteğe bağlı).
+
+## Ölçüm 2: gerçek Türkçe konuşma, işlemci ve ekran kartı (2026-11-25)
+
+Örnekler: Google FLEURS `tr_tr` test kümesinden 6 cümle (60 sn gerçek konuşma, doğru
+metinleriyle). Kelime hata oranı (WER) noktalama ve büyük/küçük harf yok sayılarak; hız ilk
+(ısınma) cümle hariç. Dil sabit `tr`. Donanım: 20 çekirdek (8 iş parçacığı), RTX 4070
+Laptop 8 GB, CUDA 13.
+
+| Model | Boyut | WER | İşlemci hızı | CUDA hızı |
+|---|---|---|---|---|
+| base | 148 MB | %37,5 | gerçek zamanın 11,6 katı | 119 katı |
+| small | 488 MB | %26,0 | 3,8 katı | 60 katı |
+| large-v3-turbo q5 | 574 MB | %8,7 | ~0,3 katı (ilk ölçüm) | 36 katı |
+
+- Türkçe için kullanılabilir doğruluk yalnızca turbo modelde; o da pratikte ekran kartı ister.
+- CUDA ikilisi `libcudart`/`libcublas`'a doğrudan bağlı: NVIDIA'sız makinede açılmaz.
+- Vulkan derlemesi `vulkan-headers` eksik olduğu için yapılamadı; ölçülmedi.
+- `clang` sistemde yokken `whisper-rs-sys` bağlama üretemiyor;
+  `WHISPER_DONT_GENERATE_BINDINGS=1` ile paketteki hazır bağlamalar kullanılıyor.
+
