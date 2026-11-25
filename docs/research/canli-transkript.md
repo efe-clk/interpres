@@ -91,7 +91,26 @@ Laptop 8 GB, CUDA 13.
 
 - Türkçe için kullanılabilir doğruluk yalnızca turbo modelde; o da pratikte ekran kartı ister.
 - CUDA ikilisi `libcudart`/`libcublas`'a doğrudan bağlı: NVIDIA'sız makinede açılmaz.
-- Vulkan derlemesi `vulkan-headers` eksik olduğu için yapılamadı; ölçülmedi.
 - `clang` sistemde yokken `whisper-rs-sys` bağlama üretemiyor;
   `WHISPER_DONT_GENERATE_BINDINGS=1` ile paketteki hazır bağlamalar kullanılıyor.
+
+## Ölçüm 3: Vulkan ve ekran kartı yokken düşme (2026-11-25)
+
+Aynı 6 FLEURS cümlesi, aynı makine.
+
+| Model | WER | Vulkan hızı | CUDA hızı |
+|---|---|---|---|
+| small | %26,0 | gerçek zamanın 46 katı | 60 katı |
+| large-v3-turbo q5 | %8,7 | 32 katı | 36 katı |
+
+- Vulkan ikilisi yalnızca `libvulkan.so.1` (Vulkan yükleyicisi) ile bağlı; CUDA kütüphanesi yok.
+- Vulkan sürücüsü gizlenince (`VK_ICD_FILENAMES` boş) whisper.cpp "no GPU found" deyip aynı
+  süreçte işlemciye geçiyor; sonuç aynı, `small` gerçek zamanın 3,2 katı. Ayrı yardımcı
+  süreç gerekmiyor.
+- Kalan durum: Vulkan yükleyicisinin hiç olmadığı makine (ör. ekran kartı sürücüsüz Windows
+  sanal makinesi). Çözüm: Windows paketine `vulkan-1.dll` (Khronos yükleyicisi, Apache-2.0)
+  eklemek; Linux paketlerinde `libvulkan1` bağımlılık olarak yazılır.
+- Vulkan derlemesi bağlama üretmek için libclang ister (paketteki hazır bağlamalarda Vulkan
+  işlevleri yok) ve whisper.cpp gölgelendiricileri için `glslc` ister. Yerelde libclang yoksa
+  PyPI `libclang` + `BINDGEN_EXTRA_CLANG_ARGS="-I$(gcc -print-file-name=include)"` çalışıyor.
 

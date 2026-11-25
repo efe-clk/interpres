@@ -207,9 +207,9 @@ Kararlar (öneri, 2026-11-25'te ölçümlerle güncellendi):
   kapatılabilir; varsayılan açık. Oyun (OCR) altyazısında da aynı ayar kullanılır.
 
 Adımlar:
-1. Ekran kartı ölçümü ve karar: Vulkan ile CUDA aynı örneklerle karşılaştırılır; yardımcı
-   süreç + işlemciye düşme denemesi (ekran kartı yokmuş gibi çalıştırarak).
-   → Doğrulama: ölçüm tablosu `docs/research/canli-transkript.md`'de; düşme yolu çalışır.
+1. [x] Ekran kartı ölçümü (2026-11-25): Vulkan turbo gerçek zamanın 32 katı (CUDA 36),
+   hata oranı aynı; Vulkan sürücüsü yokken aynı süreçte işlemciye düşüyor. Ölçümler
+   `docs/research/canli-transkript.md`'de.
 2. `crates/interpres-speech`: ses yakalama (`cpal`; Linux'ta PipeWire, sistem sesi için
    hoparlörün "monitor" kaynağı; Windows'ta WASAPI loopback), 16 kHz mono'ya dönüştürme,
    VAD ile konuşma parçalarına bölme; tanıma; uydurma cümle süzgeci (dikte'den: -55 dBFS
