@@ -56,8 +56,9 @@ const VERTICAL_RATIO: f32 = 1.5;
 /// Lines below this confidence are dropped.
 const MIN_LINE_SCORE: f32 = 0.5;
 
-/// ONNX Runtime allows one environment per process; every engine shares it.
-fn environment() -> Result<&'static Environment, OcrError> {
+/// ONNX Runtime allows one environment per process; every engine shares it (the
+/// speech crate's voice detector too).
+pub fn environment() -> Result<&'static Environment, ort::Error> {
     static ENV: OnceLock<Environment> = OnceLock::new();
     if let Some(env) = ENV.get() {
         return Ok(env);

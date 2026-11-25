@@ -1,0 +1,27 @@
+[package]
+name = "interpres-speech"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+cpal.workspace = true
+directories.workspace = true
+interpres-ocr.workspace = true
+ort.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+whisper-rs.workspace = true
+
+# System audio on Linux is the PipeWire sink capture.
+[target.'cfg(target_os = "linux")'.dependencies]
+cpal = { workspace = true, features = ["pipewire"] }
+
+[dev-dependencies]
+tokio.workspace = true
+wiremock.workspace = true

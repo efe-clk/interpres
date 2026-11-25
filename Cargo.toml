@@ -16,11 +16,13 @@ interpres-docs = { path = "crates/interpres-docs" }
 interpres-daemon = { path = "crates/interpres-daemon" }
 interpres-ocr = { path = "crates/interpres-ocr" }
 interpres-overlay = { path = "crates/interpres-overlay" }
+interpres-speech = { path = "crates/interpres-speech" }
 rmcp = { version = "3.11", default-features = false, features = ["server", "macros", "transport-io"] }
 anyhow = "1"
 async-trait = "0.1"
 clap = { version = "4", features = ["derive"] }
 cosmic-text = "0.19"
+cpal = "0.18"
 csv = "1"
 directories = "6"
 futures = "0.3"
@@ -41,6 +43,7 @@ tiny-skia = "0.12"
 toml = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+whisper-rs = { version = "0.16", features = ["vulkan", "tracing_backend"] }
 wiremock = "0.6"
 xcap = "0.9.10"
 yaml-rust2 = "0.13"

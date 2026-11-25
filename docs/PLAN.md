@@ -210,14 +210,14 @@ Adımlar:
 1. [x] Ekran kartı ölçümü (2026-11-25): Vulkan turbo gerçek zamanın 32 katı (CUDA 36),
    hata oranı aynı; Vulkan sürücüsü yokken aynı süreçte işlemciye düşüyor. Ölçümler
    `docs/research/canli-transkript.md`'de.
-2. `crates/interpres-speech`: ses yakalama (`cpal`; Linux'ta PipeWire, sistem sesi için
-   hoparlörün "monitor" kaynağı; Windows'ta WASAPI loopback), 16 kHz mono'ya dönüştürme,
-   VAD ile konuşma parçalarına bölme; tanıma; uydurma cümle süzgeci (dikte'den: -55 dBFS
-   altı ve gürültü tabanına yakın ses atılır; "Altyazı M.K." / "Thanks for watching"
-   listesi); sözlük terimleri Whisper'a ipucu olarak verilir; 10 dk kullanılmazsa model
-   bellekten bırakılır.
-   → Doğrulama: FLEURS örnekleriyle tanıma testi (model yoksa atlanır, OCR gibi), VAD ve
-   süzgeç birim testleri, canlı sistem sesi denemesi.
+2. [x] `crates/interpres-speech` (2026-11-25): ses yakalama (`cpal`; sistem sesi =
+   varsayılan çıkış aygıtı giriş olarak: PipeWire sink yakalama / WASAPI loopback), 16 kHz
+   mono'ya dönüştürme, Silero VAD + bölütleme (gürültü tabanının 10 dB üstü, 0,25 sn
+   altı atılır, 15 sn'de kesilir), Whisper tanıma (yüklerken ısıtılır: soğuk sürücüde ilk
+   Vulkan çalışması ~17 sn sürüyor), uydurma cümle süzgeci, sözlük ipucu parametresi.
+   Doğrulandı: FLEURS testleri (turbo %0/%17, small %29/%42), canlı sistem sesi denemesi
+   (3 cümle, her biri ~0,5 sn'de). Mikrofon canlı denenmedi. Boşta model bırakma ve
+   sözlüğün ipucu olarak bağlanması 3. adımda (hattın yaşam döngüsü orada).
 3. Hat: konuşma parçası → `Translator` (önbellek, sözlük) → çift dilli altyazı. Altyazı
    bölge yerine ekranın altına yerleşir (yeni yerleşim). CLI: `interpres listen --to tr [--mic]`.
    → Doğrulama: CLI ile video sesinden canlı çeviri; konuşma sonu → altyazı < 2 sn.

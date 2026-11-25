@@ -26,7 +26,17 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
             libayatana-appindicator3-dev librsvg2-dev \
             libpipewire-0.3-dev libgbm-dev libdrm-dev libegl1-mesa-dev libwayland-dev \
-            libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev libdbus-1-dev libxkbcommon-dev clang
+            libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev libdbus-1-dev libxkbcommon-dev clang \
+            libasound2-dev libvulkan-dev glslc
+      # whisper.cpp's GPU backend (interpres-speech) needs the Vulkan headers, the
+      # loader (vulkan-1.dll, also needed to start the test binaries) and glslc.
+      - name: Install Vulkan SDK
+        if: runner.os == 'Windows'
+        uses: jakoch/install-vulkan-sdk-action@v1.7.0
+        with:
+          vulkan_version: 1.4.363.1
+          install_runtime: true
+          cache: true
       - uses: actions/setup-node@v5
         with:
           node-version: 22

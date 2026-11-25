@@ -78,6 +78,17 @@ Kullanıcı kod bilmiyor. Kodu Claude yazar; derleme, test ve arayüz kontrolün
   yakalama katmanı da okur.
 - Bayraklar: `--overlay` katmanı aç/kapat, `--quit` çalışan kopyayı kapatır.
 
+### Canlı ses (M12)
+
+- `crates/interpres-speech`: ses yakalama (`cpal`; sistem sesi = varsayılan çıkış aygıtı
+  giriş olarak açılır: PipeWire sink yakalama / WASAPI loopback), 16 kHz mono, Silero VAD
+  (`ort`, OCR ile aynı ortam: `interpres_ocr::environment()`), Whisper (`whisper-rs`,
+  whisper.cpp, Vulkan). Ses makineden çıkmaz.
+- Ekran kartı Vulkan ile (CUDA değil): yoksa aynı süreçte işlemciye düşer. Model: ekran
+  kartı varsa `large-v3-turbo` q5, yoksa `small`. Modeller OCR gibi sabit commit + SHA-256.
+- Derleme için libclang, Vulkan başlıkları ve `glslc` gerekir (Arch: `clang`,
+  `vulkan-headers`, `shaderc`).
+
 ## Repo yapısı
 
 ```
@@ -92,6 +103,7 @@ crates/
   interpres-mcp/                # `interpres-mcp` stdio MCP sunucusu (rmcp)
   interpres-daemon/             # `interpres-daemon`: paylaşılan belge kuyruğu (soket / named pipe)
   interpres-ocr/                # PaddleOCR (ONNX) metin tanıma ve model indirme
+  interpres-speech/             # ses yakalama, VAD, Whisper ile konuşma tanıma
   interpres-overlay/            # ekran yakalama, değişim algılama, yakala-oku-çevir hattı,
                                 #   Wayland layer-shell bölge seçici ve altyazı katmanı
 apps/
