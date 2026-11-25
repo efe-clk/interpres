@@ -30,6 +30,11 @@ jobs:
             libasound2-dev libvulkan-dev glslc
       # whisper.cpp's GPU backend (interpres-speech) needs the Vulkan headers, the
       # loader (vulkan-1.dll, also needed to start the test binaries) and glslc.
+      # whisper.cpp's Vulkan shader tool builds in deep folders; MSBuild fails past
+      # 260 characters, so keep the target directory short on Windows.
+      - name: Short target directory
+        if: runner.os == 'Windows'
+        run: echo "CARGO_TARGET_DIR=C:\t" >> $env:GITHUB_ENV
       - name: Install Vulkan SDK
         if: runner.os == 'Windows'
         uses: jakoch/install-vulkan-sdk-action@v1.7.0
@@ -50,6 +55,8 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ runner.os == 'Windows' && '. -> C:\t' || '. -> target' }}
       - run: cargo fmt --all --check
       - run: cargo build --workspace --locked
       - run: cargo build --workspace --locked --all-features
