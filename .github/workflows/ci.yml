@@ -42,6 +42,11 @@ jobs:
           vulkan_version: 1.4.363.1
           install_runtime: true
           cache: true
+      # tauri.windows.conf.json bundles it; the build checks that it exists.
+      - name: Vulkan loader for the bundle
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Copy-Item C:\VulkanSDK\1.4.363.1\runtime\x64\vulkan-1.dll apps/desktop/src-tauri/vulkan-1.dll
       - uses: actions/setup-node@v5
         with:
           node-version: 22
