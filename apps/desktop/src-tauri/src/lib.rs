@@ -152,6 +152,8 @@ pub fn run() {
             game::game_status,
             game::game_start,
             game::game_stop,
+            game::speech_status,
+            game::speech_download,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

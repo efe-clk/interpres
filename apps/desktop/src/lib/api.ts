@@ -77,15 +77,31 @@ export interface CaptionStyle {
   background: string
   /** 0–100 */
   opacity: number
+  /** Show the original text above the translation. */
+  show_original: boolean
 }
 
+export type SpeechModel = 'small' | 'turbo'
+
+export interface SpeechSettings {
+  source: 'system' | 'microphone'
+  /** Spoken language (DeepL code); null detects it. */
+  language: string | null
+  model: 'auto' | SpeechModel
+}
+
+export const DEFAULT_SPEECH: SpeechSettings = { source: 'system', language: null, model: 'auto' }
+
 export interface GameSettings {
+  /** What to translate: text in a screen region, or speech. */
+  input: 'screen' | 'speech'
   /** x, y, width, height in logical screen coordinates. */
   region: [number, number, number, number] | null
   ocr_model: OcrModel
   source_lang: string | null
   target_lang: string | null
   caption: CaptionStyle
+  speech: SpeechSettings
 }
 
 export const DEFAULT_CAPTION: CaptionStyle = {
@@ -94,6 +110,7 @@ export const DEFAULT_CAPTION: CaptionStyle = {
   font_size: null,
   background: '#101014',
   opacity: 85,
+  show_original: true,
 }
 
 export interface KeyStatus {
@@ -187,7 +204,15 @@ const defaultSettings: Settings = {
     language: 'tr',
     shortcuts: DEFAULT_SHORTCUTS,
   },
-  game: { region: null, ocr_model: 'general', source_lang: null, target_lang: null, caption: DEFAULT_CAPTION },
+  game: {
+    input: 'screen',
+    region: null,
+    ocr_model: 'general',
+    source_lang: null,
+    target_lang: null,
+    caption: DEFAULT_CAPTION,
+    speech: DEFAULT_SPEECH,
+  },
 }
 
 function loadMockSettings(): Settings {
@@ -199,7 +224,7 @@ function loadMockSettings(): Settings {
         ...defaultSettings,
         ...s,
         ui: { ...defaultSettings.ui, ...s.ui, shortcuts: { ...DEFAULT_SHORTCUTS, ...s.ui?.shortcuts } },
-        game: { ...defaultSettings.game, ...s.game, caption: { ...DEFAULT_CAPTION, ...s.game?.caption } },
+        game: { ...defaultSettings.game, ...s.game, caption: { ...DEFAULT_CAPTION, ...s.game?.caption }, speech: { ...DEFAULT_SPEECH, ...s.game?.speech } },
       }
     }
   } catch {
@@ -555,6 +580,41 @@ export async function ocrDownload(model: OcrModel, onProgress: (done: number, to
   const off = await listenTo<{ done: number; total: number }>('ocr-download', (p) => onProgress(p.done, p.total))
   try {
     await call('ocr_download', { model })
+  } finally {
+    off()
+  }
+}
+
+export interface SpeechStatus {
+  installed: boolean
+  /** Download size in bytes. */
+  size: number
+  /** The model `auto` resolves to. */
+  model: SpeechModel
+  /** GPU used for recognition; null runs on the CPU. */
+  gpu: string | null
+}
+
+let mockSpeechInstalled = false
+
+export async function speechStatus(model: SpeechSettings['model']): Promise<SpeechStatus> {
+  if (isTauri) return call('speech_status', { model })
+  const resolved = model === 'auto' ? 'turbo' : model
+  return { installed: mockSpeechInstalled, size: resolved === 'turbo' ? 576_284_217 : 489_844_989, model: resolved, gpu: 'GPU' }
+}
+
+export async function speechDownload(model: SpeechModel, onProgress: (done: number, total: number) => void): Promise<void> {
+  if (!isTauri) {
+    for (let i = 1; i <= 10; i++) {
+      await sleep(120)
+      onProgress(i * 57_000_000, 570_000_000)
+    }
+    mockSpeechInstalled = true
+    return
+  }
+  const off = await listenTo<{ done: number; total: number }>('speech-download', (p) => onProgress(p.done, p.total))
+  try {
+    await call('speech_download', { model })
   } finally {
     off()
   }

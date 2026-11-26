@@ -18,10 +18,12 @@ pub struct Settings {
     pub game: GameSettings,
 }
 
-/// Screen translation for games (OCR overlay).
+/// Live translation for games and videos: screen text (OCR) or speech.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct GameSettings {
+    /// What to translate: `screen` (OCR of a region) or `speech` (audio).
+    pub input: String,
     /// Screen region to read, in logical global coordinates: x, y, width, height.
     pub region: Option<(i32, i32, u32, u32)>,
     /// OCR recognition model: `general` (Chinese, Japanese, English), `korean`, `latin`.
@@ -31,6 +33,29 @@ pub struct GameSettings {
     /// `None` falls back to the main target language.
     pub target_lang: Option<String>,
     pub caption: CaptionStyle,
+    pub speech: SpeechSettings,
+}
+
+/// Speech translation (`input = "speech"`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SpeechSettings {
+    /// `system` (what the speakers play) or `microphone`.
+    pub source: String,
+    /// Spoken language as a DeepL code (`JA`, `EN`); `None` detects it.
+    pub language: Option<String>,
+    /// Whisper model: `auto` (turbo with a GPU, small without), `small` or `turbo`.
+    pub model: String,
+}
+
+impl Default for SpeechSettings {
+    fn default() -> Self {
+        Self {
+            source: "system".into(),
+            language: None,
+            model: "auto".into(),
+        }
+    }
 }
 
 /// How the translated caption looks and where it goes.
@@ -47,6 +72,8 @@ pub struct CaptionStyle {
     pub background: String,
     /// Background opacity, 0–100.
     pub opacity: u8,
+    /// Show the original text above the translation.
+    pub show_original: bool,
 }
 
 impl Default for CaptionStyle {
@@ -57,6 +84,7 @@ impl Default for CaptionStyle {
             font_size: None,
             background: "#101014".into(),
             opacity: 85,
+            show_original: true,
         }
     }
 }
@@ -64,11 +92,13 @@ impl Default for CaptionStyle {
 impl Default for GameSettings {
     fn default() -> Self {
         Self {
+            input: "screen".into(),
             region: None,
             ocr_model: "general".into(),
             source_lang: None,
             target_lang: None,
             caption: CaptionStyle::default(),
+            speech: SpeechSettings::default(),
         }
     }
 }
@@ -225,6 +255,7 @@ mod tests {
                 },
             },
             game: GameSettings {
+                input: "speech".into(),
                 region: Some((10, 20, 800, 120)),
                 ocr_model: "latin".into(),
                 source_lang: None,
@@ -235,6 +266,12 @@ mod tests {
                     font_size: Some(28),
                     background: "#ffffff".into(),
                     opacity: 40,
+                    show_original: false,
+                },
+                speech: SpeechSettings {
+                    source: "microphone".into(),
+                    language: Some("JA".into()),
+                    model: "small".into(),
                 },
             },
         };
@@ -251,5 +288,9 @@ mod tests {
         assert_eq!(s.ui.theme, "dark");
         assert_eq!(s.ui.shortcuts.palette, "mod+k");
         assert_eq!(s.game.ocr_model, "general");
+        // Settings files from before speech translation keep working.
+        assert_eq!(s.game.input, "screen");
+        assert_eq!(s.game.speech.model, "auto");
+        assert!(s.game.caption.show_original);
     }
 }

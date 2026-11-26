@@ -5,7 +5,7 @@
     "glossary": "Glossary",
     "history": "History",
     "settings": "Settings",
-    "game": "Game"
+    "game": "Live"
   },
   "engine": {
     "deepl": "DeepL",
@@ -183,7 +183,7 @@
     "quickWayland": "On Wayland, bind in the compositor: interpres-desktop --quick (quick translate), --toggle (show/hide)",
     "addFiles": "Add files",
     "toggle": "Show/hide the app (global)",
-    "overlay": "Game overlay on/off (global)"
+    "overlay": "Live translation on/off (global)"
   },
   "palette": {
     "placeholder": "Search commands",
@@ -205,7 +205,7 @@
     "modelMissing": "Not downloaded",
     "download": "Download ({{size}} MB)",
     "downloading": "Downloading {{percent}}%",
-    "script": "Game text script",
+    "script": "Text script",
     "scriptGeneral": "Chinese, Japanese, English",
     "scriptKorean": "Korean",
     "scriptLatin": "Latin alphabet (English, German, Turkish…)",
@@ -238,7 +238,28 @@
     "previewText": "The door is locked. You need the silver key.",
     "lookHint": "Changes apply right away while the overlay runs.",
     "notice": {
-      "no_layer_shell": "This desktop cannot place the overlay next to the region (e.g. GNOME). The translation is shown in a separate window."
-    }
+      "no_layer_shell": "This desktop cannot place the overlay next to the region (e.g. GNOME). The translation is shown in a separate window.",
+      "speech_loading": "Loading the speech model.",
+      "speech_listening": "Listening. Each sentence's translation appears at the bottom of the screen."
+    },
+    "input": "Translate",
+    "inputScreen": "Text on screen (OCR)",
+    "inputSpeech": "Speech (audio)",
+    "introSpeech": "Listens to system audio or the microphone and shows each sentence's translation at the bottom of the screen. Audio never leaves the computer; only the recognized text is translated.",
+    "speechSource": "Audio source",
+    "speechSystem": "System audio",
+    "speechMic": "Microphone",
+    "speechLanguage": "Spoken language",
+    "speechModel": "Speech model",
+    "speechModelAuto": "Auto ({{model}})",
+    "speechModelSmall": "Small (fast, less accurate)",
+    "speechModelTurbo": "Turbo (accurate, needs a GPU)",
+    "gpu": "GPU: {{name}}",
+    "noGpu": "No GPU found; runs on the CPU.",
+    "needSpeechModel": "Download the speech model first.",
+    "waitingSpeech": "Waiting for speech",
+    "showOriginal": "Also show the original",
+    "previewOriginal": "扉は鍵がかかっている。銀の鍵が必要だ。",
+    "speechModelFile": "Model file"
   }
 }

@@ -5,7 +5,7 @@
     "glossary": "Sözlük",
     "history": "Geçmiş",
     "settings": "Ayarlar",
-    "game": "Oyun"
+    "game": "Canlı"
   },
   "engine": {
     "deepl": "DeepL",
@@ -183,7 +183,7 @@
     "quickWayland": "Wayland'de derleyicide bağlayın: interpres-desktop --quick (hızlı çeviri), --toggle (göster/gizle)",
     "addFiles": "Dosya ekle",
     "toggle": "Uygulamayı göster/gizle (küresel)",
-    "overlay": "Oyun çevirisini aç/kapat (küresel)"
+    "overlay": "Canlı çeviriyi aç/kapat (küresel)"
   },
   "palette": {
     "placeholder": "Komut ara",
@@ -205,7 +205,7 @@
     "modelMissing": "İndirilmedi",
     "download": "İndir ({{size}} MB)",
     "downloading": "İndiriliyor {{percent}}%",
-    "script": "Oyunun yazı dili",
+    "script": "Yazının dili",
     "scriptGeneral": "Çince, Japonca, İngilizce",
     "scriptKorean": "Korece",
     "scriptLatin": "Latin alfabesi (Türkçe, İngilizce, Almanca…)",
@@ -238,7 +238,28 @@
     "previewText": "Kapı kilitli. Gümüş bir anahtar gerekiyor.",
     "lookHint": "Katman çalışırken yapılan değişiklikler hemen uygulanır.",
     "notice": {
-      "no_layer_shell": "Bu masaüstü katmanı bölgenin yanına yerleştiremiyor (ör. GNOME). Çeviri ayrı bir pencerede gösteriliyor."
-    }
+      "no_layer_shell": "Bu masaüstü katmanı bölgenin yanına yerleştiremiyor (ör. GNOME). Çeviri ayrı bir pencerede gösteriliyor.",
+      "speech_loading": "Konuşma modeli yükleniyor.",
+      "speech_listening": "Dinleniyor. Cümle bitince çevirisi ekranın altında görünür."
+    },
+    "input": "Ne çevrilsin",
+    "inputScreen": "Ekrandaki yazı (OCR)",
+    "inputSpeech": "Konuşma (ses)",
+    "introSpeech": "Sistem sesini ya da mikrofonu dinler; her cümle bitince çevirisini ekranın altında gösterir. Ses bilgisayardan çıkmaz, yalnızca yazıya dökülen metin çevrilir.",
+    "speechSource": "Ses kaynağı",
+    "speechSystem": "Sistem sesi",
+    "speechMic": "Mikrofon",
+    "speechLanguage": "Konuşma dili",
+    "speechModel": "Konuşma modeli",
+    "speechModelAuto": "Otomatik ({{model}})",
+    "speechModelSmall": "Small (hızlı, daha az doğru)",
+    "speechModelTurbo": "Turbo (doğru, ekran kartı ister)",
+    "gpu": "Ekran kartı: {{name}}",
+    "noGpu": "Ekran kartı bulunamadı; işlemcide çalışır.",
+    "needSpeechModel": "Önce konuşma modelini indirin.",
+    "waitingSpeech": "Konuşma bekleniyor",
+    "showOriginal": "Orijinali de göster",
+    "previewOriginal": "扉は鍵がかかっている。銀の鍵が必要だ。",
+    "speechModelFile": "Model dosyası"
   }
 }

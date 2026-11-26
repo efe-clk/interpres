@@ -86,6 +86,9 @@ Kullanıcı kod bilmiyor. Kodu Claude yazar; derleme, test ve arayüz kontrolün
   whisper.cpp, Vulkan). Ses makineden çıkmaz.
 - Ekran kartı Vulkan ile (CUDA değil): yoksa aynı süreçte işlemciye düşer. Model: ekran
   kartı varsa `large-v3-turbo` q5, yoksa `small`. Modeller OCR gibi sabit commit + SHA-256.
+- Arayüzde ekranın adı "Canlı" (EN "Live"); kod ve ayar dosyasında adı hâlâ `game`
+  (eski ayar dosyaları bozulmasın diye). Ses için kısayol yok; `--overlay` seçili kaynağı
+  (ekran/ses) açıp kapatır.
 - Derleme için libclang, Vulkan başlıkları ve `glslc` gerekir (Arch: `clang`,
   `vulkan-headers`, `shaderc`).
 

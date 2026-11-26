@@ -64,27 +64,38 @@ export function PickerPage() {
 
 /** Click-through caption window placed next to the captured region. */
 export function CaptionPage() {
-  const [text, setText] = useState('')
+  const [frame, setFrame] = useState<api.GameFrame | null>(null)
   const [style, setStyle] = useState<api.CaptionStyle>(api.DEFAULT_CAPTION)
+  const [speech, setSpeech] = useState(false)
 
   useEffect(() => {
     document.documentElement.style.background = 'transparent'
     document.body.style.background = 'transparent'
-    void api.getSettings().then((s) => setStyle(s.game.caption))
+    void api.getSettings().then((s) => {
+      setStyle(s.game.caption)
+      setSpeech(s.game.input === 'speech')
+    })
     let off = () => {}
-    void api.onGameFrame((f) => setText(f.translation)).then((f) => (off = f))
+    void api.onGameFrame(setFrame).then((f) => (off = f))
     return () => off()
   }, [])
 
-  if (!text) return null
+  if (!frame?.translation) return null
   const css = captionCss(style)
-  // The panel wraps the text and sits next to the subtitle it translates.
-  const align = style.placement === 'below' ? 'items-start' : style.placement === 'above' ? 'items-end' : 'items-center'
+  // The panel wraps the text and sits next to the subtitle it translates; speech
+  // captions sit at the bottom of their area, like film subtitles.
+  const align =
+    speech || style.placement === 'above' ? 'items-end' : style.placement === 'below' ? 'items-start' : 'items-center'
   return (
     <div className={`fixed inset-0 flex justify-center ${align}`}>
       <div className="max-w-full rounded-[8px] px-3.5 py-2 text-center" style={css.panel}>
+        {style.show_original && frame.source && (
+          <p className="text-[clamp(11px,3.2vh,22px)] leading-snug opacity-70" style={css.text}>
+            {frame.source.replace(/\n/g, ' ')}
+          </p>
+        )}
         <p className="text-[clamp(14px,4.5vh,30px)] leading-snug font-medium" style={css.text}>
-          {text}
+          {frame.translation}
         </p>
       </div>
     </div>

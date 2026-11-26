@@ -1,4 +1,4 @@
-import { BookA, FileText, Gamepad2, History, Languages, Settings, type LucideIcon } from 'lucide-react'
+import { BookA, FileText, History, Languages, Radio, Settings, type LucideIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useApp, type Screen } from '@/lib/app-context'
 import { cn } from '@/lib/utils'
@@ -8,7 +8,7 @@ const ITEMS: { screen: Screen; icon: LucideIcon; key: string }[] = [
   { screen: 'documents', icon: FileText, key: '2' },
   { screen: 'glossary', icon: BookA, key: '3' },
   { screen: 'history', icon: History, key: '4' },
-  { screen: 'game', icon: Gamepad2, key: '5' },
+  { screen: 'game', icon: Radio, key: '5' },
   { screen: 'settings', icon: Settings, key: '6' },
 ]
 

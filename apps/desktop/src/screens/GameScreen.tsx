@@ -1,4 +1,4 @@
-import { Crop, Download, Gamepad2, Play, Square } from 'lucide-react'
+import { AudioLines, Crop, Download, Play, ScanText, Square } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LanguageSelect } from '@/components/common/selects'
@@ -28,6 +28,7 @@ export function GameScreen({ active }: { active: boolean }) {
   const { settings, updateSettings } = useApp()
   const shortcuts = useShortcuts()
   const [ocr, setOcr] = useState<api.OcrStatus | null>(null)
+  const [speech, setSpeech] = useState<api.SpeechStatus | null>(null)
   const [progress, setProgress] = useState<number | null>(null)
   const [running, setRunning] = useState(false)
   const [frame, setFrame] = useState<api.GameFrame | null>(null)
@@ -40,11 +41,17 @@ export function GameScreen({ active }: { active: boolean }) {
     if (game) setOcr(await api.ocrStatus(game.ocr_model).catch(() => null))
   }, [game])
 
+  const speechModel = game?.speech.model
+  const refreshSpeech = useCallback(async () => {
+    if (speechModel) setSpeech(await api.speechStatus(speechModel).catch(() => null))
+  }, [speechModel])
+
   useEffect(() => {
     if (!active) return
     void refreshOcr()
+    void refreshSpeech()
     void api.gameStatus().then(setRunning)
-  }, [active, refreshOcr])
+  }, [active, refreshOcr, refreshSpeech])
 
   useEffect(() => {
     const offs: Promise<() => void>[] = [
@@ -61,7 +68,9 @@ export function GameScreen({ active }: { active: boolean }) {
 
   if (!settings || !game) return null
   const setGame = (patch: Partial<api.GameSettings>) => void updateSettings({ game: { ...game, ...patch } })
+  const setSpeechSettings = (patch: Partial<api.SpeechSettings>) => setGame({ speech: { ...game.speech, ...patch } })
   const caption = game.caption
+  const isSpeech = game.input === 'speech'
 
   // Saves at once; a running overlay restarts shortly after the last change to
   // pick the new look up (restarting reloads the OCR model, so not on every step).
@@ -96,6 +105,17 @@ export function GameScreen({ active }: { active: boolean }) {
     }
   })
 
+  const downloadSpeech = run(async () => {
+    if (!speech) return
+    setProgress(0)
+    try {
+      await api.speechDownload(speech.model, (done, total) => setProgress(Math.round((done / total) * 100)))
+    } finally {
+      setProgress(null)
+      await refreshSpeech()
+    }
+  })
+
   const pick = run(async () => {
     const region = await api.gamePickRegion()
     if (region) setGame({ region })
@@ -114,18 +134,108 @@ export function GameScreen({ active }: { active: boolean }) {
     setRunning(await api.gameStatus())
   })
 
-  const ready = !!game.region && !!ocr?.installed
-  const blocker = !game.region ? t('game.needRegion') : !ocr?.installed ? t('game.needModel') : null
+  const ready = isSpeech ? !!speech?.installed : !!game.region && !!ocr?.installed
+  const blocker = isSpeech
+    ? speech?.installed
+      ? null
+      : t('game.needSpeechModel')
+    : !game.region
+      ? t('game.needRegion')
+      : !ocr?.installed
+        ? t('game.needModel')
+        : null
+
+  const modelStatus = (installed: boolean | undefined, size: number | undefined, onDownload: () => void) =>
+    progress !== null ? (
+      <div className="w-48 space-y-1">
+        <span className="text-xs text-muted-foreground">{t('game.downloading', { percent: progress })}</span>
+        <Progress value={progress} className="h-1" />
+      </div>
+    ) : installed ? (
+      <Badge variant="secondary">{t('game.modelReady')}</Badge>
+    ) : (
+      <Button size="sm" variant="outline" onClick={onDownload}>
+        <Download />
+        {t('game.download', { size: size ? Math.round(size / 1_000_000) : '…' })}
+      </Button>
+    )
 
   return (
     <div className="h-full overflow-auto">
       <div className="mx-auto max-w-2xl space-y-6 px-6 py-6">
         <div className="flex items-start gap-3">
-          <Gamepad2 className="mt-0.5 size-5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
-          <p className="text-sm text-muted-foreground">{t('game.intro')}</p>
+          {isSpeech ? (
+            <AudioLines className="mt-0.5 size-5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
+          ) : (
+            <ScanText className="mt-0.5 size-5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
+          )}
+          <p className="text-sm text-muted-foreground">{isSpeech ? t('game.introSpeech') : t('game.intro')}</p>
         </div>
 
         <section className="space-y-3">
+          <Row label={t('game.input')}>
+            <Select value={game.input} disabled={running} onValueChange={(v) => setGame({ input: v as api.GameSettings['input'] })}>
+              <SelectTrigger className="w-72" aria-label={t('game.input')}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper">
+                <SelectItem value="screen">{t('game.inputScreen')}</SelectItem>
+                <SelectItem value="speech">{t('game.inputSpeech')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </Row>
+        </section>
+
+        {isSpeech ? (
+          <section className="space-y-3">
+            <Row label={t('game.speechSource')}>
+              <Select value={game.speech.source} onValueChange={(v) => setSpeechSettings({ source: v as api.SpeechSettings['source'] })}>
+                <SelectTrigger className="w-72" aria-label={t('game.speechSource')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  <SelectItem value="system">{t('game.speechSystem')}</SelectItem>
+                  <SelectItem value="microphone">{t('game.speechMic')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </Row>
+            <Row label={t('game.speechLanguage')}>
+              <LanguageSelect
+                kind="source"
+                value={game.speech.language}
+                onChange={(language) => setSpeechSettings({ language })}
+                className="w-48"
+                label={t('game.speechLanguage')}
+              />
+            </Row>
+            <Row label={t('game.target')}>
+              <LanguageSelect
+                kind="target"
+                value={game.target_lang ?? settings.target_lang ?? 'EN-US'}
+                onChange={(target_lang) => setGame({ target_lang })}
+                className="w-48"
+                label={t('game.target')}
+              />
+            </Row>
+            <Row label={t('game.speechModel')}>
+              <Select value={game.speech.model} onValueChange={(v) => setSpeechSettings({ model: v as api.SpeechSettings['model'] })}>
+                <SelectTrigger className="w-72" aria-label={t('game.speechModel')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  <SelectItem value="auto">{t('game.speechModelAuto', { model: speech?.gpu ? 'Turbo' : 'Small' })}</SelectItem>
+                  <SelectItem value="small">{t('game.speechModelSmall')}</SelectItem>
+                  <SelectItem value="turbo">{t('game.speechModelTurbo')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </Row>
+            <Row label={t('game.speechModelFile')}>{modelStatus(speech?.installed, speech?.size, () => void downloadSpeech())}</Row>
+            {speech && (
+              <p className="text-xs text-muted-foreground">{speech.gpu ? t('game.gpu', { name: speech.gpu }) : t('game.noGpu')}</p>
+            )}
+          </section>
+        ) : (
+          <section className="space-y-3">
           <Row label={t('game.script')}>
             <Select value={game.ocr_model} onValueChange={(v) => setGame({ ocr_model: v as api.OcrModel })}>
               <SelectTrigger className="w-72" aria-label={t('game.script')}>
@@ -138,21 +248,7 @@ export function GameScreen({ active }: { active: boolean }) {
               </SelectContent>
             </Select>
           </Row>
-          <Row label={t('game.model')}>
-            {progress !== null ? (
-              <div className="w-48 space-y-1">
-                <span className="text-xs text-muted-foreground">{t('game.downloading', { percent: progress })}</span>
-                <Progress value={progress} className="h-1" />
-              </div>
-            ) : ocr?.installed ? (
-              <Badge variant="secondary">{t('game.modelReady')}</Badge>
-            ) : (
-              <Button size="sm" variant="outline" onClick={() => void download()}>
-                <Download />
-                {t('game.download', { size: ocr ? Math.round(ocr.size / 1_000_000) : '…' })}
-              </Button>
-            )}
-          </Row>
+          <Row label={t('game.model')}>{modelStatus(ocr?.installed, ocr?.size, () => void download())}</Row>
           <Row label={t('game.source')}>
             <LanguageSelect kind="source" value={game.source_lang} onChange={(source_lang) => setGame({ source_lang })} className="w-48" label={t('game.source')} />
           </Row>
@@ -174,10 +270,12 @@ export function GameScreen({ active }: { active: boolean }) {
               {t('game.pick')}
             </Button>
           </Row>
-        </section>
+          </section>
+        )}
 
         <section className="space-y-3 border-t border-border pt-5">
           <h2 className="text-sm font-medium">{t('game.look')}</h2>
+          {!isSpeech && (
           <Row label={t('game.placement')}>
             {caption.placement === 'custom' && (
               <>
@@ -207,6 +305,14 @@ export function GameScreen({ active }: { active: boolean }) {
                 <SelectItem value="custom">{t('game.placementCustom')}</SelectItem>
               </SelectContent>
             </Select>
+          </Row>
+          )}
+          <Row label={t('game.showOriginal')}>
+            <Switch
+              checked={caption.show_original}
+              onCheckedChange={(show_original) => setCaption({ show_original })}
+              aria-label={t('game.showOriginal')}
+            />
           </Row>
           <Row label={t('game.fontSize')}>
             <span className="w-12 text-right font-mono text-xs text-muted-foreground">
@@ -255,6 +361,11 @@ export function GameScreen({ active }: { active: boolean }) {
           >
             <div className="flex justify-center">
               <div className="max-w-full rounded-[8px] px-3.5 py-2 text-center" style={css.panel}>
+                {caption.show_original && (
+                  <p className="text-sm leading-snug opacity-70" style={css.text}>
+                    {t('game.previewOriginal')}
+                  </p>
+                )}
                 <p className="text-xl leading-snug" style={css.text}>
                   {t('game.previewText')}
                 </p>
@@ -288,7 +399,7 @@ export function GameScreen({ active }: { active: boolean }) {
                 <p className="text-[15px] whitespace-pre-wrap">{frame.translation}</p>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">{t('game.waiting')}</p>
+              <p className="text-sm text-muted-foreground">{isSpeech ? t('game.waitingSpeech') : t('game.waiting')}</p>
             )}
           </section>
         )}

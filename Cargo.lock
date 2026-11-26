@@ -2849,6 +2849,7 @@ dependencies = [
  "interpres-engine-deepl",
  "interpres-ocr",
  "interpres-overlay",
+ "interpres-speech",
  "serde",
  "tauri",
  "tauri-build",

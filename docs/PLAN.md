@@ -227,10 +227,16 @@ Adımlar:
    Doğrulandı: testler; canlı sistem sesinde yakalama → tanıma → DeepL çevirisi çalıştı.
    Canlı denemede kullanıcının o an çalan sesi de yakalandı; sistem sesi denemeleri
    kullanıcı başındayken yapılmaz. Mikrofon denenmedi.
-4. Arayüz: "Oyun" ekranında kaynak seçimi "Ekran (OCR)" / "Ses"; Ayarlar'da ses kaynağı,
-   konuşma dili (sabit; otomatik isteğe bağlı), model, ekran kartı durumu, indirme durumu,
-   "orijinali göster". Kısayol bu adımda sorulur.
-   → Doğrulama: `npm run build`, arayüzde boş/yükleniyor/hata/başarılı durumlar.
+4. [x] Arayüz (2026-11-26): "Oyun" ekranının adı "Canlı" oldu (EN: "Live"; kullanıcı
+   isteği). "Ne çevrilsin": ekrandaki yazı (OCR) / konuşma (ses). Ses için kaynak
+   (sistem/mikrofon), konuşma dili, model (otomatik/small/turbo), indirme, ekran kartı
+   bilgisi; "Orijinali de göster" iki kaynakta da. Başlat/Durdur, durum ve `--overlay`
+   bayrağı ortak; ses için ayrı kısayol yok (kullanıcı kararı). Model yüklenirken
+   "yükleniyor", hazır olunca "dinleniyor" bildirimi; altyazı penceresi (layer-shell
+   olmayan masaüstleri) de çift dilli. Kendiliğinden biten çalıştırma (ör. ses aygıtı yok)
+   yeniden başlatmayı engellemez.
+   Doğrulandı: `npm run build`, sahte veriyle arayüz (tarayıcıda). Masaüstü uygulamasında
+   canlı ses denenmedi (kullanıcının sesini yakalamamak için).
 5. Belgeler (README, CLAUDE.md), CI'da yeni sistem bağımlılıkları (cmake; ekran kartı
    sürümü için Vulkan ya da CUDA araçları).
 
