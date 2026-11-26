@@ -276,7 +276,8 @@ npm uyarısı (`minimatch` zorlandı), dikey metin OCR'ı, eğik metin OCR'ı (8
   pencerede gösterilir ve konumlanamaz (kullanıcıya bildirilir). GNOME'da denenmedi.
 - OCR'da 60°'den dik açılı (dikey olmayan) metin desteklenmiyor.
 - Paketler imzasız: Windows SmartScreen uyarısı verir.
-- Linux paketleri glibc 2.39 istiyor (Ubuntu 22.04 desteklenmiyor).
+- Linux paketleri glibc 2.39 istiyor (Ubuntu 22.04 desteklenmiyor). Gerek yok: kullanıcı
+  yalnızca kendi bilgisayarında (Arch) kullanıyor (kullanıcı kararı, 2026-11-27).
 
 ## Notlar ve riskler
 
