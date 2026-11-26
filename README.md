@@ -94,7 +94,7 @@ cargo run -p interpres-cli -- --version
 
 | Klasör | İçerik |
 |---|---|
-| `crates/interpres-core` | Engine trait, ortak tipler, sözlük, önbellek, çeviri belleği |
+| `crates/interpres-core` | Engine trait, ortak tipler, sözlük, önbellek, geçmiş |
 | `crates/interpres-engine-deepl` | DeepL motoru |
 | `crates/interpres-cli` | `interpres` komut satırı aracı |
 | `crates/interpres-mcp` | `interpres-mcp` MCP sunucusu (stdio) |

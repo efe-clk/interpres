@@ -269,7 +269,7 @@ mekanizması silindi.
 
 Kapatılanlar: çoklu monitörde bölge seçici (her ekranda açılır, tek monitörde denendi),
 npm uyarısı (`minimatch` zorlandı), dikey metin OCR'ı, eğik metin OCR'ı (8°–60°,
-2026-11-27).
+2026-11-27), kullanılmayan çeviri belleği (tablo silindi, 2026-11-27).
 
 - Windows'ta gerçek deneme: kurulum, oyun katmanı (Tauri pencereleri), bölge seçici.
 - GNOME Wayland'de layer-shell yok: seçici tam ekran pencereyle çalışır; çeviri ayrı bir
@@ -277,7 +277,6 @@ npm uyarısı (`minimatch` zorlandı), dikey metin OCR'ı, eğik metin OCR'ı (8
 - OCR'da 60°'den dik açılı (dikey olmayan) metin desteklenmiyor.
 - Paketler imzasız: Windows SmartScreen uyarısı verir.
 - Linux paketleri glibc 2.39 istiyor (Ubuntu 22.04 desteklenmiyor).
-- Çeviri belleği kaydediliyor ama kullanılmıyor (DeepL'de karşılığı yok).
 
 ## Notlar ve riskler
 

@@ -1,5 +1,5 @@
-//! Local SQLite database: glossary terms, translation cache, translation memory and
-//! history. One file in the OS data directory.
+//! Local SQLite database: glossary terms, translation cache and history. One file in
+//! the OS data directory.
 
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -33,7 +33,8 @@ pub enum StoreError {
 type Result<T> = std::result::Result<T, StoreError>;
 
 /// Schema versions, applied in order. `PRAGMA user_version` records how many ran.
-const MIGRATIONS: &[&str] = &["
+const MIGRATIONS: &[&str] = &[
+    "
     CREATE TABLE glossary_terms (
         id          INTEGER PRIMARY KEY,
         source_lang TEXT NOT NULL,
@@ -69,7 +70,12 @@ const MIGRATIONS: &[&str] = &["
         created_at      INTEGER NOT NULL
     );
     CREATE INDEX history_created ON history (created_at DESC);
-"];
+",
+    "
+    -- The translation memory was only ever written (the history holds the same text).
+    DROP TABLE tm;
+",
+];
 
 /// A language pair that has glossary terms.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -348,20 +354,11 @@ impl Store {
         Ok(())
     }
 
-    // ---------- Translation memory and history ----------
+    // ---------- History ----------
 
-    /// Records a finished translation in the translation memory and the history.
+    /// Records a finished translation in the history.
     pub fn record(&self, req: &TranslateRequest, t: &Translation) -> Result<()> {
-        let conn = self.conn();
-        let source_lang = req.source.as_deref().or(t.detected_source.as_deref());
-        if let Some(src) = source_lang {
-            conn.execute(
-                "INSERT OR REPLACE INTO tm (source_lang, target_lang, source, target, engine, created_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                params![src.to_uppercase(), req.target, req.text, t.text, t.engine.as_str(), now()],
-            )?;
-        }
-        conn.execute(
+        self.conn().execute(
             "INSERT INTO history (source_text, target_text, source_lang, target_lang,
                                   detected_source, engine, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
@@ -547,5 +544,19 @@ mod tests {
         assert_eq!(s.history("%", 10).unwrap().len(), 1);
         assert_eq!(s.history("yok", 10).unwrap().len(), 0);
         assert_eq!(s.history("", 1).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn translation_memory_table_is_dropped() {
+        let s = Store::open_in_memory().unwrap();
+        let n: i64 = s
+            .conn()
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE name = 'tm'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(n, 0);
     }
 }

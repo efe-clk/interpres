@@ -44,7 +44,8 @@ Kullanıcı kod bilmiyor. Kodu Claude yazar; derleme, test ve arayüz kontrolün
 
 ### Veri, ayarlar, gizli bilgiler
 
-- SQLite (`rusqlite`, bundled): terim sözlüğü, çeviri belleği, önbellek, geçmiş.
+- SQLite (`rusqlite`, bundled): terim sözlüğü, önbellek, geçmiş. (Çeviri belleği
+  2026-11-27 kaldırıldı: yalnızca yazılıyordu, geçmişle aynı içerik.)
 - Önbellek anahtarı: `hash(motor + kaynak dil + hedef dil + resmiyet + sözlük hash'i + metin)`.
   Resmiyet de anahtarda; aynı metnin resmî ve samimi çevirisi farklıdır.
 - Sözlükler temel dil çiftine göre tutulur (`TR → EN`) ve yalnızca kaynak dil seçiliyken
@@ -93,7 +94,7 @@ Kullanıcı kod bilmiyor. Kodu Claude yazar; derleme, test ve arayüz kontrolün
 Cargo.toml                      # workspace
 crates/
   interpres-core/               # Engine trait, ortak tipler, Translator servisi,
-                                #   sözlük, önbellek, çeviri belleği, geçmiş, ayarlar
+                                #   sözlük, önbellek, geçmiş, ayarlar
   interpres-engine-deepl/       # DeepL metin, belge, glossary
   interpres-cli/                # `interpres` komut satırı aracı
   interpres-mcp/                # `interpres-mcp` stdio MCP sunucusu (rmcp)
