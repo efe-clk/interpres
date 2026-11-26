@@ -10,7 +10,6 @@ use crate::EngineId;
 #[serde(default)]
 pub struct Settings {
     pub engine: EngineId,
-    pub fallback_engine: Option<EngineId>,
     /// `None` means auto-detect.
     pub source_lang: Option<String>,
     pub target_lang: Option<String>,
@@ -160,7 +159,6 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             engine: EngineId::Deepl,
-            fallback_engine: None,
             source_lang: None,
             target_lang: None,
             ui: UiSettings::default(),
@@ -242,8 +240,7 @@ mod tests {
     fn roundtrip() {
         let p = temp_path("roundtrip");
         let s = Settings {
-            engine: EngineId::ClaudeApi,
-            fallback_engine: Some(EngineId::Deepl),
+            engine: EngineId::Deepl,
             source_lang: None,
             target_lang: Some("EN-US".into()),
             ui: UiSettings {

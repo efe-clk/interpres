@@ -4,19 +4,17 @@ use crate::store::{Store, cache_key};
 use crate::{Engine, EngineError, TranslateRequest, Translation};
 
 /// Entry point used by every front-end: applies the glossary, answers from the cache
-/// when it can, routes the request to the primary engine (falling back to a second
-/// one on failure) and records the result in the history.
+/// when it can, routes the request to the engine and records the result in the
+/// history.
 pub struct Translator {
     primary: Arc<dyn Engine>,
-    fallback: Option<Arc<dyn Engine>>,
     store: Option<Arc<Store>>,
 }
 
 impl Translator {
-    pub fn new(primary: Arc<dyn Engine>, fallback: Option<Arc<dyn Engine>>) -> Self {
+    pub fn new(primary: Arc<dyn Engine>) -> Self {
         Self {
             primary,
-            fallback,
             store: None,
         }
     }
@@ -33,7 +31,7 @@ impl Translator {
 
     pub async fn translate(&self, req: &TranslateRequest) -> Result<Translation, EngineError> {
         let Some(store) = &self.store else {
-            return self.translate_uncached(req).await;
+            return self.primary.translate(req).await;
         };
 
         let mut req = req.clone();
@@ -58,10 +56,8 @@ impl Translator {
                 engine: self.primary.id(),
             },
             None => {
-                let t = self.translate_uncached(&req).await?;
-                if t.engine == self.primary.id()
-                    && let Err(e) = store.cache_put(&key, &t)
-                {
+                let t = self.primary.translate(&req).await?;
+                if let Err(e) = store.cache_put(&key, &t) {
                     tracing::warn!(error = %e, "cache write failed");
                 }
                 t
@@ -71,24 +67,6 @@ impl Translator {
             tracing::warn!(error = %e, "history write failed");
         }
         Ok(t)
-    }
-
-    async fn translate_uncached(&self, req: &TranslateRequest) -> Result<Translation, EngineError> {
-        match self.primary.translate(req).await {
-            Ok(t) => Ok(t),
-            Err(e) => match &self.fallback {
-                Some(fb) if e.is_retryable_elsewhere() => {
-                    tracing::warn!(
-                        primary = %self.primary.id(),
-                        fallback = %fb.id(),
-                        error = %e,
-                        "primary engine failed, falling back"
-                    );
-                    fb.translate(req).await
-                }
-                _ => Err(e),
-            },
-        }
     }
 }
 
@@ -164,7 +142,7 @@ mod tests {
     async fn second_request_comes_from_cache_and_both_are_recorded() {
         let store = Arc::new(Store::open_in_memory().unwrap());
         let engine = counting(EngineId::Deepl, Ok("Hello"));
-        let t = Translator::new(engine.clone(), None).with_store(store.clone());
+        let t = Translator::new(engine.clone()).with_store(store.clone());
         assert_eq!(t.translate(&req()).await.unwrap().text, "Hello");
         assert_eq!(t.translate(&req()).await.unwrap().text, "Hello");
         assert_eq!(calls(&engine), 1);
@@ -182,7 +160,7 @@ mod tests {
             .upsert_term(None, "TR", "EN", "Merhaba", "Howdy")
             .unwrap();
         let engine = counting(EngineId::Deepl, Ok("Howdy"));
-        let t = Translator::new(engine.clone(), None).with_store(store.clone());
+        let t = Translator::new(engine.clone()).with_store(store.clone());
 
         t.translate(&req()).await.unwrap();
         assert!(
@@ -221,61 +199,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn fallback_results_are_not_cached_under_primary() {
-        let store = Arc::new(Store::open_in_memory().unwrap());
-        let primary = counting(
-            EngineId::ClaudeApi,
-            Err(EngineError::Network("down".into())),
-        );
-        let t = Translator::new(primary.clone(), Some(fake(EngineId::Deepl, Ok("Hi"))))
-            .with_store(store);
-        t.translate(&req()).await.unwrap();
-        t.translate(&req()).await.unwrap();
-        assert_eq!(calls(&primary), 2);
-    }
-
-    #[tokio::test]
-    async fn uses_primary_when_it_succeeds() {
-        let t = Translator::new(
-            fake(EngineId::ClaudeApi, Ok("Hello")),
-            Some(fake(EngineId::Deepl, Ok("Hi"))),
-        );
-        let out = t.translate(&req()).await.unwrap();
-        assert_eq!(out.engine, EngineId::ClaudeApi);
-    }
-
-    #[tokio::test]
-    async fn falls_back_on_failure() {
-        let t = Translator::new(
-            fake(
-                EngineId::ClaudeApi,
-                Err(EngineError::Network("down".into())),
-            ),
-            Some(fake(EngineId::Deepl, Ok("Hi"))),
-        );
-        let out = t.translate(&req()).await.unwrap();
-        assert_eq!(out.engine, EngineId::Deepl);
-        assert_eq!(out.text, "Hi");
-    }
-
-    #[tokio::test]
-    async fn does_not_fall_back_on_invalid_request() {
-        let t = Translator::new(
-            fake(
-                EngineId::ClaudeApi,
-                Err(EngineError::InvalidRequest("bad".into())),
-            ),
-            Some(fake(EngineId::Deepl, Ok("Hi"))),
-        );
-        assert!(matches!(
-            t.translate(&req()).await,
-            Err(EngineError::InvalidRequest(_))
-        ));
-    }
-
-    #[tokio::test]
-    async fn returns_error_without_fallback() {
-        let t = Translator::new(fake(EngineId::Deepl, Err(EngineError::QuotaExceeded)), None);
+    async fn returns_engine_error() {
+        let t = Translator::new(fake(EngineId::Deepl, Err(EngineError::QuotaExceeded)));
         assert_eq!(t.translate(&req()).await, Err(EngineError::QuotaExceeded));
     }
 

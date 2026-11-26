@@ -7,16 +7,12 @@ use crate::glossary::Glossary;
 #[serde(rename_all = "kebab-case")]
 pub enum EngineId {
     Deepl,
-    ClaudeApi,
-    ClaudeCode,
 }
 
 impl EngineId {
     pub fn as_str(self) -> &'static str {
         match self {
             EngineId::Deepl => "deepl",
-            EngineId::ClaudeApi => "claude-api",
-            EngineId::ClaudeCode => "claude-code",
         }
     }
 }

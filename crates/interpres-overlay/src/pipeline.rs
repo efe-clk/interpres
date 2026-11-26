@@ -209,7 +209,7 @@ mod tests {
         let (ocr_calls, tr_calls) = (Arc::new(AtomicUsize::new(0)), Arc::new(AtomicUsize::new(0)));
         let store = Arc::new(Store::open_in_memory().unwrap());
         let translator =
-            Arc::new(Translator::new(Arc::new(Upper(tr_calls.clone())), None).with_store(store));
+            Arc::new(Translator::new(Arc::new(Upper(tr_calls.clone()))).with_store(store));
         let frames = vec![frame(50), frame(50), frame(100), frame(0), frame(50)];
         let mut p = Pipeline::new(
             Region {

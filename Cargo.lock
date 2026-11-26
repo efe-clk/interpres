@@ -2796,7 +2796,6 @@ dependencies = [
  "clap",
  "interpres-core",
  "interpres-daemon",
- "interpres-engine-claude",
  "interpres-engine-deepl",
  "interpres-speech",
  "tokio",
@@ -2862,14 +2861,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
 ]
-
-[[package]]
-name = "interpres-docs"
-version = "0.3.0"
-
-[[package]]
-name = "interpres-engine-claude"
-version = "0.3.0"
 
 [[package]]
 name = "interpres-engine-deepl"

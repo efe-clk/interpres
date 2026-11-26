@@ -338,7 +338,7 @@ fn translator(app: &AppHandle) -> CmdResult<Arc<Translator>> {
         .ok_or(EngineError::MissingKey)?;
     let store = app.state::<Arc<Store>>().inner().clone();
     Ok(Arc::new(
-        Translator::new(Arc::new(DeeplEngine::new(key)), None).with_store(store),
+        Translator::new(Arc::new(DeeplEngine::new(key))).with_store(store),
     ))
 }
 

@@ -286,7 +286,7 @@ async fn translate(
         bail!("nothing to translate");
     }
 
-    let translator = Translator::new(Arc::new(deepl()?), None).with_store(Arc::new(store()?));
+    let translator = Translator::new(Arc::new(deepl()?)).with_store(Arc::new(store()?));
     let req = TranslateRequest {
         text,
         source: from.or(settings.source_lang),
@@ -332,7 +332,7 @@ async fn listen(
             .join(", "),
         None => String::new(),
     };
-    let translator = Translator::new(Arc::new(deepl()?), None).with_store(store);
+    let translator = Translator::new(Arc::new(deepl()?)).with_store(store);
 
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
     let config = speech::ListenConfig {

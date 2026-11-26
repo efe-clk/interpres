@@ -40,7 +40,7 @@ mod linux {
             height: n(4) as u32,
         };
         let key = secrets::get_key(EngineId::Deepl)?.ok_or("no DeepL key")?;
-        let translator = Translator::new(Arc::new(DeeplEngine::new(key)), None)
+        let translator = Translator::new(Arc::new(DeeplEngine::new(key)))
             .with_store(Arc::new(Store::open(&Store::default_path()?)?));
         let root = models::default_root().ok_or("no data dir")?;
         let mut pipeline = Pipeline::new(

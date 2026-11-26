@@ -35,20 +35,12 @@ Kullanıcı kod bilmiyor. Kodu Claude yazar; derleme, test ve arayüz kontrolün
   - Terim sözlükleri: glossary API.
   - Anahtar `:fx` ile bitiyorsa `https://api-free.deepl.com`, değilse `https://api.deepl.com`.
   - Kimlik doğrulama `Authorization: DeepL-Auth-Key <key>` başlığıyla.
-- **Claude (isteğe bağlı, ERTELENDİ)**: M5 ve M6 ertelendi (bkz. `docs/PLAN.md`); arayüzde
-  Claude seçenekleri gizli, crate boş. Geri alınınca: `claude` Cargo özelliği arkasında. Özellik kapalıyken Claude
-  kodu derlemeye hiç girmez (`#[cfg(feature = "claude")]`, crate opsiyonel bağımlılık).
-  - a) Claude API: reqwest ile ince Messages API istemcisi (resmi Rust SDK yok).
-    SSE akışı, prompt caching, ayardan seçilen model.
-  - b) Claude Code: `claude -p --output-format stream-json --verbose` alt süreç.
-- Claude hata verirse ya da kurulu değilse çeviri yedek motora (varsayılan DeepL) düşer.
+- Tek motor DeepL. Claude motoru (M14) kullanıcı kararıyla çıkarıldı (2026-11-27); yedek
+  motor yok.
 
 ### Belgeler
 
-- DeepL yolu: belge doğrudan DeepL'e gider (PDF dahil).
-- Claude yolu: kendi hattımız (`interpres-docs`). docx/pptx/xlsx için `zip` + `quick-xml`;
-  metin run bilgisi korunarak çıkarılır, çevrilir, geri yazılır. srt, md, txt de bu yoldan.
-- PDF v1'de yalnızca DeepL ile.
+- Belge doğrudan DeepL'e gider (PDF dahil).
 
 ### Veri, ayarlar, gizli bilgiler
 
@@ -101,8 +93,6 @@ crates/
   interpres-core/               # Engine trait, ortak tipler, Translator servisi,
                                 #   sözlük, önbellek, çeviri belleği, geçmiş, ayarlar
   interpres-engine-deepl/       # DeepL metin, belge, glossary
-  interpres-engine-claude/      # Claude API + Claude Code (feature: claude)
-  interpres-docs/               # belge ayrıştırma / yeniden birleştirme
   interpres-cli/                # `interpres` komut satırı aracı
   interpres-mcp/                # `interpres-mcp` stdio MCP sunucusu (rmcp)
   interpres-daemon/             # `interpres-daemon`: paylaşılan belge kuyruğu (soket / named pipe)
@@ -146,7 +136,6 @@ Bu yüzden:
 ```sh
 # Rust
 cargo build --workspace
-cargo build --workspace --all-features          # Claude dahil
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo fmt --all --check

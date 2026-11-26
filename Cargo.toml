@@ -11,8 +11,6 @@ repository = "https://github.com/efe-clk/interpres"
 [workspace.dependencies]
 interpres-core = { path = "crates/interpres-core" }
 interpres-engine-deepl = { path = "crates/interpres-engine-deepl" }
-interpres-engine-claude = { path = "crates/interpres-engine-claude" }
-interpres-docs = { path = "crates/interpres-docs" }
 interpres-daemon = { path = "crates/interpres-daemon" }
 interpres-ocr = { path = "crates/interpres-ocr" }
 interpres-overlay = { path = "crates/interpres-overlay" }

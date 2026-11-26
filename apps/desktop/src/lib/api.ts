@@ -8,7 +8,7 @@ export const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in
 
 // ---------- Types (mirror interpres-core) ----------
 
-export type EngineId = 'deepl' | 'claude-api' | 'claude-code'
+export type EngineId = 'deepl'
 export type Formality = 'default' | 'more' | 'less' | 'prefer_more' | 'prefer_less'
 export type LanguageKind = 'source' | 'target'
 
@@ -56,7 +56,6 @@ export interface Shortcuts {
 
 export interface Settings {
   engine: EngineId
-  fallback_engine: EngineId | null
   source_lang: string | null
   target_lang: string | null
   ui: { theme: 'dark' | 'light'; language: 'tr' | 'en'; shortcuts: Shortcuts }
@@ -196,7 +195,6 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 const defaultSettings: Settings = {
   engine: 'deepl',
-  fallback_engine: null,
   source_lang: null,
   target_lang: 'EN-US',
   ui: {

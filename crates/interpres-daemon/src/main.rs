@@ -17,9 +17,6 @@ fn document_engine(engine: EngineId) -> Result<Arc<dyn DocumentEngine>, EngineEr
                 .ok_or(EngineError::MissingKey)?;
             Ok(Arc::new(DeeplEngine::new(key)))
         }
-        other => Err(EngineError::InvalidRequest(format!(
-            "{other} cannot translate documents yet"
-        ))),
     }
 }
 

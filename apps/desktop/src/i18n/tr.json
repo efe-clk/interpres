@@ -8,9 +8,7 @@
     "game": "Canlı"
   },
   "engine": {
-    "deepl": "DeepL",
-    "claude-api": "Claude API",
-    "claude-code": "Claude Code"
+    "deepl": "DeepL"
   },
   "status": {
     "free": "Free",

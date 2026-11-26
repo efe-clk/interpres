@@ -110,14 +110,6 @@ fn now() -> i64 {
         .unwrap_or(0)
 }
 
-fn engine_from_str(s: &str) -> EngineId {
-    match s {
-        "claude-api" => EngineId::ClaudeApi,
-        "claude-code" => EngineId::ClaudeCode,
-        _ => EngineId::Deepl,
-    }
-}
-
 fn formality_str(f: Formality) -> &'static str {
     match f {
         Formality::Default => "default",
@@ -411,7 +403,7 @@ impl Store {
                 source_lang: r.get(3)?,
                 target_lang: r.get(4)?,
                 detected_source: r.get(5)?,
-                engine: engine_from_str(&r.get::<_, String>(6)?),
+                engine: EngineId::Deepl,
                 created_at: r.get(7)?,
             })
         })?;
@@ -519,7 +511,6 @@ mod tests {
         let base = req("Merhaba");
         let k = cache_key(EngineId::Deepl, &base);
         assert_eq!(k, cache_key(EngineId::Deepl, &base));
-        assert_ne!(k, cache_key(EngineId::ClaudeApi, &base));
         let mut r = base.clone();
         r.formality = Formality::More;
         assert_ne!(k, cache_key(EngineId::Deepl, &r));

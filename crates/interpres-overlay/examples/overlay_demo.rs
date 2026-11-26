@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         height: a[3].parse()?,
     };
     let key = secrets::get_key(EngineId::Deepl)?.ok_or("no DeepL key")?;
-    let translator = Translator::new(Arc::new(DeeplEngine::new(key)), None)
+    let translator = Translator::new(Arc::new(DeeplEngine::new(key)))
         .with_store(Arc::new(Store::open(&Store::default_path()?)?));
     let root = models::default_root().ok_or("no data dir")?;
     let mut p = Pipeline::new(

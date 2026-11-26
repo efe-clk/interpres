@@ -39,7 +39,7 @@ pub async fn translate(
     store: State<'_, Arc<Store>>,
     req: TranslateRequest,
 ) -> CmdResult<Translation> {
-    Translator::new(Arc::new(deepl()?), None)
+    Translator::new(Arc::new(deepl()?))
         .with_store(store.inner().clone())
         .translate(&req)
         .await

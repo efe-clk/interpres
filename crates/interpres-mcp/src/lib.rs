@@ -157,7 +157,7 @@ impl InterpresMcp {
             formality,
             glossary: None,
         };
-        match Translator::new(Arc::new(engine), None)
+        match Translator::new(Arc::new(engine))
             .with_store(self.store.clone())
             .translate(&req)
             .await

@@ -98,9 +98,9 @@ Sürümler yalnızca büyük değişikliklerde ve kullanıcı onayıyla yayımla
 Aşağıdaki sürüm numaraları yalnızca yön gösterir.
 
 Sıra: önce açık kalan işler, sonra çekirdeği dışarı açan servisler (MCP, daemon), sonra
-en büyük iş olan oyun katmanı, sonra canlı ses çevirisi. Claude en sonda
-(kullanıcı kararı, 2026-11-20). macOS yol haritasından çıkarıldı (kullanıcı kararı, 2026-11-21).
-Android (M13) çıkarıldı: yazılım yalnızca bilgisayarda çalışır (kullanıcı kararı, 2026-11-27). Her aşamanın başında, o aşamadaki açık karar soruları kullanıcıya sorulur.
+en büyük iş olan oyun katmanı, sonra canlı ses çevirisi. macOS yol haritasından çıkarıldı (kullanıcı kararı, 2026-11-21).
+Android (M13) ve Claude motoru (M14) çıkarıldı: yazılım yalnızca bilgisayarda, yalnızca
+DeepL ile çalışır (kullanıcı kararı, 2026-11-27). Her aşamanın başında, o aşamadaki açık karar soruları kullanıcıya sorulur.
 
 ## [x] M8 — v0.2: Açık işler ve cila
 
@@ -260,40 +260,11 @@ Riskler:
 Kullanıcı kararıyla yol haritasından çıkarıldı (2026-11-27): mobil sürüm yok. Başlanmış iş
 (Android derlemesi, telefon düzeni, Keystore'da anahtar) yerel `android-wip` dalında duruyor.
 
-## [ ] M14 — Claude (en son)
+## M14 — Claude (çıkarıldı)
 
-Kullanıcı kararıyla ertelendi (2026-11-19) ve en sona alındı (2026-11-20). Boş
-`interpres-engine-claude` crate'i ve `claude` özelliği duruyor; arayüzde Claude seçenekleri
-gizli. Başlarken model listesi ve API ayrıntıları güncel belgelerden doğrulanır; çeviri
-belleği Claude'a bağlam olarak verilir.
-
-#### M5 — Claude motoru + yedeğe düşme
-
-- `interpres-engine-claude`, `claude` özelliği arkasında.
-- Claude API: reqwest ile Messages API; SSE akışı; prompt caching (sistem talimatı ve
-  sözlük önbelleğe alınır); model ayardan. Model listesi ve parametreler bu aşamada güncel
-  belgelere göre doğrulanır.
-- Claude Code: `claude -p --output-format stream-json --verbose` alt süreç; `claude`
-  komutunun varlığı algılanır.
-- Yedek motora düşme: Claude hata / yok → DeepL; arayüzde bildirilir.
-- Metin ekranında akış hâlinde çıktı; Ayarlar'da Claude API anahtarı, model, Claude Code
-  durumu, yedek motor seçimi.
-- Testler: wiremock ile SSE akışı ve hatalar; Claude Code için sahte betik ile alt süreç.
-
-**Bitti:** `--features claude` ile Claude API ve Claude Code çeviri yapar; özellik kapalıyken
-Claude kodu ikilide yok; Claude kapatılınca çeviri DeepL'den gelir.
-
-#### M6 — Claude yolu için belge işleme hattı
-
-- `interpres-docs`: docx, pptx, xlsx (zip + quick-xml), srt, md, txt.
-- Run'lar korunarak metin parçaları çıkarılır, işaretli segmentler hâlinde çevrilir,
-  aynı yapıya geri yazılır. Büyük belgede parçalama + sıra korunur, eksik segment kontrolü.
-- Kuyruk, motor Claude seçildiğinde bu hattı kullanır.
-- Testler: örnek dosyalarla gidiş-dönüş (çeviri yerine kimlik fonksiyonu) bayt/yapı
-  eşitliği; kalın/italik/bağlantı korunur.
-
-**Bitti:** Örnek docx/pptx/xlsx/srt/md Claude ile çevrilir, Word/LibreOffice'te biçimi
-bozulmadan açılır, hiçbir segment atlanmaz.
+Kullanıcı kararıyla çıkarıldı (2026-11-27). Boş `interpres-engine-claude` ve
+`interpres-docs` crate'leri, `claude` özelliği, Claude motor kimlikleri ve yedek motor
+mekanizması silindi.
 
 ## Açık işler (2026-11-20, güncelleme 2026-11-21)
 
@@ -306,12 +277,12 @@ npm uyarısı (`minimatch` zorlandı), dikey metin OCR'ı.
 - Açılı (eğik) metin OCR'da desteklenmiyor; yatay ve dikey destekleniyor.
 - Paketler imzasız: Windows SmartScreen uyarısı verir.
 - Linux paketleri glibc 2.39 istiyor (Ubuntu 22.04 desteklenmiyor).
-- Çeviri belleği kaydediliyor ama kullanılmıyor (Claude aşamasında bağlam olacak).
+- Çeviri belleği kaydediliyor ama kullanılmıyor (DeepL'de karşılığı yok).
 
 ## Notlar ve riskler
 
 - Linux'ta `keyring` Secret Service ister (gnome-keyring veya KWallet çalışıyor olmalı).
-- DeepL metin API'si akış vermez; akış yalnızca Claude motorlarında görünür.
+- DeepL metin API'si akış vermez.
 - Wayland'de küresel kısayol ve çerçevesiz pencere davranışı derleyiciye göre değişebilir;
   M2'de Hyprland üzerinde doğrulanır.
 - Ek crate'ler: `async-trait` (dyn uyumlu async trait), `futures`, `tokio-util`, `sha2`,

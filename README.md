@@ -1,8 +1,7 @@
 # Interpres
 
 Genel amaçlı çeviri aracı: büyük belgeleri biçimi bozmadan çevirir, doğrudan yazılan
-metni çevirir, ekrandaki yazıyı ve konuşmayı canlı çevirir. Motor: DeepL. (Claude desteği
-ertelendi.)
+metni çevirir, ekrandaki yazıyı ve konuşmayı canlı çevirir. Motor: DeepL.
 
 *General-purpose translator for documents, text, on-screen text and live speech, powered by DeepL.*
 
@@ -97,8 +96,6 @@ cargo run -p interpres-cli -- --version
 |---|---|
 | `crates/interpres-core` | Engine trait, ortak tipler, sözlük, önbellek, çeviri belleği |
 | `crates/interpres-engine-deepl` | DeepL motoru |
-| `crates/interpres-engine-claude` | Claude motoru (ertelendi, boş) |
-| `crates/interpres-docs` | Belge ayrıştırma ve yeniden birleştirme |
 | `crates/interpres-cli` | `interpres` komut satırı aracı |
 | `crates/interpres-mcp` | `interpres-mcp` MCP sunucusu (stdio) |
 | `crates/interpres-daemon` | `interpres-daemon`: paylaşılan belge kuyruğu |
