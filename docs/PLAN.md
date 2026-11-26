@@ -98,8 +98,9 @@ Sürümler yalnızca büyük değişikliklerde ve kullanıcı onayıyla yayımla
 Aşağıdaki sürüm numaraları yalnızca yön gösterir.
 
 Sıra: önce açık kalan işler, sonra çekirdeği dışarı açan servisler (MCP, daemon), sonra
-en büyük iş olan oyun katmanı, sonra canlı ses çevirisi, sonra Android. Claude en sonda
-(kullanıcı kararı, 2026-11-20). macOS yol haritasından çıkarıldı (kullanıcı kararı, 2026-11-21). Her aşamanın başında, o aşamadaki açık karar soruları kullanıcıya sorulur.
+en büyük iş olan oyun katmanı, sonra canlı ses çevirisi. Claude en sonda
+(kullanıcı kararı, 2026-11-20). macOS yol haritasından çıkarıldı (kullanıcı kararı, 2026-11-21).
+Android (M13) çıkarıldı: yazılım yalnızca bilgisayarda çalışır (kullanıcı kararı, 2026-11-27). Her aşamanın başında, o aşamadaki açık karar soruları kullanıcıya sorulur.
 
 ## [x] M8 — v0.2: Açık işler ve cila
 
@@ -254,13 +255,10 @@ Riskler:
   doğrudan PipeWire kütüphanesi kullanılır.
 - Konuşma "cümle bitince" çevrilir; kelime kelime akış yok (gecikme cümle başına ~1–2 sn).
 
-## [ ] M13 — Android
+## M13 — Android (çıkarıldı)
 
-- Tauri mobile ile Android derlemesi; dar ekran için arayüz düzeni (alt sekme çubuğu).
-- Metin ve belge çevirisi, sözlük, geçmiş; anahtar Android keystore'da.
-- Dağıtım yolu (APK / Play Store) bu aşamanın başında sorulur.
-
-**Bitti:** APK bir Android cihazda kurulur, metin ve belge çevirir.
+Kullanıcı kararıyla yol haritasından çıkarıldı (2026-11-27): mobil sürüm yok. Başlanmış iş
+(Android derlemesi, telefon düzeni, Keystore'da anahtar) yerel `android-wip` dalında duruyor.
 
 ## [ ] M14 — Claude (en son)
 
