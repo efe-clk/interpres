@@ -180,7 +180,7 @@ okunup çevrilir ve katmanda gösterilir.
 > gösterilen Japonca altyazı → Türkçe katman). Windows yolu (Tauri pencereleri, xcap)
 > CI'da derleniyor ama gerçek bir Windows makinesinde denenmedi.
 
-## [ ] M12 — Canlı ses çevirisi (plan, onay bekliyor)
+## [x] M12 — Canlı ses çevirisi (v0.3.0)
 
 Oyundaki/videodaki konuşmayı (sistem sesi) ya da mikrofonu dinleyip konuşma bitince yazıya
 dökmek, çevirmek ve altyazı kutusunda göstermek. Ses makineden çıkmaz; yalnızca tanınan metin
@@ -237,8 +237,10 @@ Adımlar:
    yeniden başlatmayı engellemez.
    Doğrulandı: `npm run build`, sahte veriyle arayüz (tarayıcıda). Masaüstü uygulamasında
    canlı ses denenmedi (kullanıcının sesini yakalamamak için).
-5. Belgeler (README, CLAUDE.md), CI'da yeni sistem bağımlılıkları (cmake; ekran kartı
-   sürümü için Vulkan ya da CUDA araçları).
+5. [x] Paketleme ve belgeler (2026-11-26): sürüm akışında whisper.cpp ortak işlemci
+   tabanıyla derlenir (`packaging/ggml-portable.cmake`: `GGML_NATIVE=OFF`, AVX2/FMA/F16C açık,
+   AVX-512 kapalı; yerelde doğrulandı), Windows'ta kısa derleme klasörü ve Vulkan SDK,
+   kurulum paketine ve CLI zip'ine `vulkan-1.dll`; `.deb` `libvulkan1` ister. README.
 
 **Bitti:** Hyprland'de bir videonun sesi canlı olarak çevrilip çift dilli altyazıda
 görünür; ekran kartıyla turbo model, ekran kartı yokken `small` çalışır; mikrofon da çalışır;

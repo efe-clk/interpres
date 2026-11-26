@@ -3,3 +3,6 @@ node_modules/
 dist/
 .env
 *.local
+
+# Copied in by the release workflow (Windows installer)
+apps/desktop/src-tauri/vulkan-1.dll

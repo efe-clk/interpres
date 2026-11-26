@@ -11,6 +11,8 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  # whisper.cpp: build for a common CPU baseline (AVX2), not the runner's CPU.
+  CMAKE_TOOLCHAIN_FILE: ${{ github.workspace }}/packaging/ggml-portable.cmake
 
 jobs:
   create:
@@ -53,7 +55,26 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
             libayatana-appindicator3-dev librsvg2-dev \
             libpipewire-0.3-dev libgbm-dev libdrm-dev libegl1-mesa-dev libwayland-dev \
-            libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev libdbus-1-dev libxkbcommon-dev clang patchelf
+            libxcb1-dev libxcb-randr0-dev libxcb-shm0-dev libdbus-1-dev libxkbcommon-dev clang patchelf \
+            libasound2-dev libvulkan-dev glslc
+      # whisper.cpp's Vulkan shader tool builds in deep folders; MSBuild fails past
+      # 260 characters, so keep the target directory short on Windows.
+      - name: Short target directory
+        if: runner.os == 'Windows'
+        run: echo "CARGO_TARGET_DIR=C:\t" >> $env:GITHUB_ENV
+      - name: Install Vulkan SDK
+        if: runner.os == 'Windows'
+        uses: jakoch/install-vulkan-sdk-action@v1.7.0
+        with:
+          vulkan_version: 1.4.363.1
+          install_runtime: true
+          cache: true
+      # Shipped next to the exe (tauri.windows.conf.json) so the app starts on PCs
+      # without GPU drivers; speech then runs on the CPU.
+      - name: Vulkan loader for the installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Copy-Item C:\VulkanSDK\1.4.363.1\runtime\x64\vulkan-1.dll apps/desktop/src-tauri/vulkan-1.dll
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -61,6 +82,8 @@ jobs:
           cache-dependency-path: apps/desktop/package-lock.json
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ runner.os == 'Windows' && '. -> C:\t' || '. -> target' }}
       - run: npm ci
         working-directory: apps/desktop
       - name: Build and upload installers
@@ -78,7 +101,7 @@ jobs:
       - name: Package CLI (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path target/release/interpres.exe, target/release/interpres-mcp.exe, target/release/interpres-daemon.exe, LICENSE -DestinationPath "${{ matrix.cli_name }}"
+        run: Compress-Archive -Path C:\t\release\interpres.exe, C:\t\release\interpres-mcp.exe, C:\t\release\interpres-daemon.exe, apps/desktop/src-tauri/vulkan-1.dll, LICENSE -DestinationPath "${{ matrix.cli_name }}"
       - name: Upload CLI
         shell: bash
         env:

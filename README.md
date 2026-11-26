@@ -1,9 +1,10 @@
 # Interpres
 
 Genel amaçlı çeviri aracı: büyük belgeleri biçimi bozmadan çevirir, doğrudan yazılan
-metni çevirir. Motor: DeepL. (Claude desteği ertelendi.)
+metni çevirir, ekrandaki yazıyı ve konuşmayı canlı çevirir. Motor: DeepL. (Claude desteği
+ertelendi.)
 
-*General-purpose translator for documents and text, powered by DeepL.*
+*General-purpose translator for documents, text, on-screen text and live speech, powered by DeepL.*
 
 > Geliştirme aşamasında. Plan: [docs/PLAN.md](docs/PLAN.md)
 
@@ -30,13 +31,27 @@ menüsünden "Çık" ile kapanır. Küresel kısayollar (Ayarlar'dan değiştiri
 Wayland'de uygulamalar küresel kısayol kaydedemez; derleyicide (ör. Hyprland) bu
 komutlara bir kısayol bağlayın.
 
-### Oyun çevirisi
+### Canlı çeviri: ekrandaki yazı
 
-"Oyun" ekranında oyunun yazı dilini seçin, OCR modelini tek tıkla indirin (~20–30 MB),
+"Canlı" ekranında "Ne çevrilsin" için "Ekrandaki yazı (OCR)" seçin, yazının dilini seçin, OCR modelini tek tıkla indirin (~20–30 MB),
 "Bölge seç" ile altyazının çıktığı alanı çizin ve başlatın. Çeviri, seçilen alanın hemen
 altında, tıklamaları oyuna geçiren bir katmanda görünür. Oyunun belleğine dokunulmaz;
 yalnızca ekran okunur. Aç/kapat: Ctrl+Alt+O, tepsi menüsü ya da
 `interpres-desktop --overlay` (Wayland'de derleyici kısayoluna bağlayın).
+
+### Canlı çeviri: konuşma
+
+"Canlı" ekranında "Konuşma (ses)" seçin: sistem sesini (oyun, video, görüşme) ya da
+mikrofonu dinler, her cümle bitince çevirisini ekranın altında gösterir; isterseniz
+orijinali de üstünde. Konuşma bilgisayarda yazıya dökülür (Whisper); ses dışarı gitmez,
+yalnızca yazıya dökülen metin DeepL'e gider.
+
+- Ekran kartı varsa (NVIDIA, AMD, Intel; Vulkan) daha doğru `turbo` modeli kullanılır
+  (~575 MB), yoksa işlemcide çalışan `small` (~490 MB). İlk kullanımda bir kez indirilir.
+- Konuşma dilini seçmek doğruluğu artırır; seçilince o dil çiftinin sözlük terimleri de
+  doğru yazım için ipucu olarak kullanılır.
+- Komut satırından: `interpres listen --to TR --from EN` (`--mic` mikrofon için).
+- İşlemci tabanı: AVX2 (2013 sonrası x86-64).
 
 ### MCP sunucusu
 
@@ -68,7 +83,8 @@ Yeni sürüm: `vX.Y.Z` etiketi gönderilince GitHub Actions paketleri derleyip y
 
 ## Derleme
 
-Rust (stable) gerekir.
+Rust (stable), CMake, libclang, Vulkan başlıkları ve `glslc` gerekir (Arch: `clang`,
+`vulkan-headers`, `shaderc`; Ubuntu: `clang`, `libvulkan-dev`, `glslc`, `libasound2-dev`).
 
 ```sh
 cargo build --workspace
@@ -87,7 +103,8 @@ cargo run -p interpres-cli -- --version
 | `crates/interpres-mcp` | `interpres-mcp` MCP sunucusu (stdio) |
 | `crates/interpres-daemon` | `interpres-daemon`: paylaşılan belge kuyruğu |
 | `crates/interpres-ocr` | PaddleOCR (ONNX) metin tanıma |
-| `crates/interpres-overlay` | Ekran yakalama, oyun katmanı, bölge seçici |
+| `crates/interpres-speech` | Ses yakalama, konuşma algılama, Whisper ile yazıya dökme |
+| `crates/interpres-overlay` | Ekran yakalama, altyazı katmanı, bölge seçici |
 | `apps/desktop` | Tauri v2 masaüstü uygulaması |
 
 ## Lisans

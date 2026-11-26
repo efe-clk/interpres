@@ -2790,7 +2790,7 @@ dependencies = [
 
 [[package]]
 name = "interpres-cli"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -2806,7 +2806,7 @@ dependencies = [
 
 [[package]]
 name = "interpres-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "csv",
@@ -2825,7 +2825,7 @@ dependencies = [
 
 [[package]]
 name = "interpres-daemon"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2842,7 +2842,7 @@ dependencies = [
 
 [[package]]
 name = "interpres-desktop"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "interpres-core",
  "interpres-daemon",
@@ -2865,15 +2865,15 @@ dependencies = [
 
 [[package]]
 name = "interpres-docs"
-version = "0.2.0"
+version = "0.3.0"
 
 [[package]]
 name = "interpres-engine-claude"
-version = "0.2.0"
+version = "0.3.0"
 
 [[package]]
 name = "interpres-engine-deepl"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "interpres-core",
@@ -2888,7 +2888,7 @@ dependencies = [
 
 [[package]]
 name = "interpres-mcp"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "interpres-core",
@@ -2906,7 +2906,7 @@ dependencies = [
 
 [[package]]
 name = "interpres-ocr"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "directories",
  "image",
@@ -2923,7 +2923,7 @@ dependencies = [
 
 [[package]]
 name = "interpres-overlay"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "cosmic-text",
@@ -2944,7 +2944,7 @@ dependencies = [
 
 [[package]]
 name = "interpres-speech"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cpal",
  "directories",
