@@ -51,3 +51,16 @@ fn missing_models_are_reported() {
     let err = Ocr::load(std::path::Path::new("/nonexistent"), RecModel::General).err();
     assert!(matches!(err, Some(interpres_ocr::OcrError::NotInstalled)));
 }
+
+#[test]
+fn reads_tilted_lines() {
+    if let Some(lines) = read(RecModel::General, "en_tilted") {
+        assert_eq!(lines, ["The door is locked.", "You need the silver key."]);
+    }
+    if let Some(lines) = read(RecModel::Latin, "tr_tilted") {
+        assert_eq!(
+            lines,
+            ["Kapı kilitli. Gümüş anahtarı", "bulmanız gerekiyor."]
+        );
+    }
+}

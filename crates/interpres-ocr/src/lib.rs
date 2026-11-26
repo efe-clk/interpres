@@ -2,8 +2,7 @@
 //! ONNX Runtime, which is linked into the binary (users install nothing).
 //!
 //! Pipeline: detect text regions ([`det`]), cut each one out, read it ([`rec`]).
-//! Boxes are axis-aligned: horizontal and vertical lines are read; text at other
-//! angles is not handled.
+//! Horizontal, vertical and tilted lines (up to 60°) are read.
 
 pub mod det;
 pub mod models;
@@ -114,12 +113,16 @@ impl Ocr {
         drop(out);
 
         let mut lines = Vec::new();
-        for bbox in boxes {
-            let crop =
-                image::imageops::crop_imm(img, bbox[0], bbox[1], bbox[2], bbox[3]).to_image();
+        for det::TextBox { bbox, tilt } in boxes {
+            let crop = match tilt {
+                Some(t) => crop_tilted(img, &t),
+                None => {
+                    image::imageops::crop_imm(img, bbox[0], bbox[1], bbox[2], bbox[3]).to_image()
+                }
+            };
             // A tall box is a vertical line (common in Japanese and Chinese games):
             // turn it on its side so it reads left to right, as PaddleOCR does.
-            let crop = if bbox[3] as f32 >= bbox[2] as f32 * VERTICAL_RATIO {
+            let crop = if tilt.is_none() && bbox[3] as f32 >= bbox[2] as f32 * VERTICAL_RATIO {
                 image::imageops::rotate270(&crop)
             } else {
                 crop
@@ -144,4 +147,36 @@ impl Ocr {
         }
         Ok(lines)
     }
+}
+
+/// Cuts a rotated rectangle out of `img` and turns it level (bilinear sampling;
+/// outside the image counts as the nearest edge pixel).
+fn crop_tilted(img: &RgbImage, t: &det::Tilt) -> RgbImage {
+    let (w, h) = (t.size.0.round().max(1.0), t.size.1.round().max(1.0));
+    let (c, s) = (t.angle.cos(), t.angle.sin());
+    let px = |x: i64, y: i64| {
+        let x = x.clamp(0, img.width() as i64 - 1) as u32;
+        let y = y.clamp(0, img.height() as i64 - 1) as u32;
+        img.get_pixel(x, y).0.map(f32::from)
+    };
+    RgbImage::from_fn(w as u32, h as u32, |u, v| {
+        let (du, dv) = (u as f32 + 0.5 - w / 2.0, v as f32 + 0.5 - h / 2.0);
+        // Pixel centers sit at +0.5.
+        let x = t.center.0 + du * c - dv * s - 0.5;
+        let y = t.center.1 + du * s + dv * c - 0.5;
+        let (x0, y0) = (x.floor(), y.floor());
+        let (fx, fy) = (x - x0, y - y0);
+        let (x0, y0) = (x0 as i64, y0 as i64);
+        let (a, b, c2, d) = (
+            px(x0, y0),
+            px(x0 + 1, y0),
+            px(x0, y0 + 1),
+            px(x0 + 1, y0 + 1),
+        );
+        image::Rgb(std::array::from_fn(|k| {
+            let top = a[k] + (b[k] - a[k]) * fx;
+            let bottom = c2[k] + (d[k] - c2[k]) * fx;
+            (top + (bottom - top) * fy).round() as u8
+        }))
+    })
 }
