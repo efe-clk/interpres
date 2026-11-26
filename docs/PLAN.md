@@ -257,8 +257,7 @@ Riskler:
 
 ## M13 — Android (çıkarıldı)
 
-Kullanıcı kararıyla yol haritasından çıkarıldı (2026-11-27): mobil sürüm yok. Başlanmış iş
-(Android derlemesi, telefon düzeni, Keystore'da anahtar) yerel `android-wip` dalında duruyor.
+Kullanıcı kararıyla yol haritasından çıkarıldı (2026-11-27): mobil sürüm yok.
 
 ## M14 — Claude (çıkarıldı)
 
