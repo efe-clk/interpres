@@ -10,6 +10,7 @@ use interpres_core::{
     TranslateRequest, Translator, secrets,
 };
 use interpres_engine_deepl::DeeplEngine;
+use interpres_speech::{self as speech, WhisperModel};
 
 /// Interpres command-line translator.
 #[derive(Parser)]
@@ -75,6 +76,22 @@ enum Command {
     },
     /// Show DeepL character usage for the current period.
     Usage,
+    /// Listen to system audio (or the microphone) and translate each sentence.
+    /// Speech is recognized on this machine; only the text is sent for translation.
+    Listen {
+        /// Target language, e.g. EN-US, DE, TR. Defaults to the target in settings.
+        #[arg(long)]
+        to: Option<String>,
+        /// Spoken language, e.g. JA, EN. Detected per sentence when omitted.
+        #[arg(long)]
+        from: Option<String>,
+        /// Listen to the microphone instead of system audio.
+        #[arg(long)]
+        mic: bool,
+        /// Speech model. Default: turbo with a GPU, small without.
+        #[arg(long, value_enum)]
+        model: Option<ModelArg>,
+    },
 }
 
 /// Language pair of a glossary, e.g. `--from tr --to en`.
@@ -150,6 +167,23 @@ impl From<KeyEngine> for EngineId {
 }
 
 #[derive(Clone, Copy, ValueEnum)]
+enum ModelArg {
+    /// Fast on the CPU, less accurate.
+    Small,
+    /// large-v3-turbo: accurate, needs a GPU to keep up.
+    Turbo,
+}
+
+impl From<ModelArg> for WhisperModel {
+    fn from(m: ModelArg) -> Self {
+        match m {
+            ModelArg::Small => WhisperModel::Small,
+            ModelArg::Turbo => WhisperModel::Turbo,
+        }
+    }
+}
+
+#[derive(Clone, Copy, ValueEnum)]
 enum FormalityArg {
     Default,
     More,
@@ -215,6 +249,12 @@ async fn main() -> Result<()> {
             eprintln!("Cache cleared.");
             Ok(())
         }
+        Command::Listen {
+            to,
+            from,
+            mic,
+            model,
+        } => listen(to, from, mic, model.map(Into::into)).await,
         Command::Usage => {
             let u = deepl()?.usage().await.map_err(explain)?;
             println!("{} / {} characters", u.character_count, u.character_limit);
@@ -256,6 +296,85 @@ async fn translate(
     };
     let t = translator.translate(&req).await.map_err(explain)?;
     println!("{}", t.text.trim_end());
+    Ok(())
+}
+
+async fn listen(
+    to: Option<String>,
+    from: Option<String>,
+    mic: bool,
+    model: Option<WhisperModel>,
+) -> Result<()> {
+    let settings = Settings::load(&Settings::default_path()?)?;
+    let target = to
+        .or(settings.target_lang)
+        .ok_or_else(|| anyhow!("no target language; pass --to, e.g. --to TR"))?;
+    let root = speech::models::default_root().ok_or_else(|| anyhow!("no data directory"))?;
+    let model = model.unwrap_or_else(speech::default_model);
+    if !speech::models::is_installed(&root, model) {
+        let mb = speech::models::download_size(model) / 1_000_000;
+        eprintln!("Downloading the speech model ({mb} MB)...");
+        speech::models::download(&root, model, "https://huggingface.co", |done, total| {
+            eprint!("\r{:3}%", done * 100 / total.max(1));
+        })
+        .await?;
+        eprintln!();
+    }
+    let store = Arc::new(store()?);
+    // Glossary terms of the pair help Whisper spell names right.
+    let prompt = match &from {
+        Some(src) => store
+            .glossary_terms(src, &target)?
+            .into_iter()
+            .take(40)
+            .map(|t| t.source)
+            .collect::<Vec<_>>()
+            .join(", "),
+        None => String::new(),
+    };
+    let translator = Translator::new(Arc::new(deepl()?), None).with_store(store);
+
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+    let config = speech::ListenConfig {
+        source: if mic {
+            speech::Source::Microphone
+        } else {
+            speech::Source::System
+        },
+        model,
+        language: from.as_deref().map(speech::whisper_language),
+        prompt,
+        models_root: root,
+    };
+    let _listener = speech::listen(config, move |e| {
+        let _ = tx.send(e);
+    });
+    eprintln!("Loading the speech model...");
+    loop {
+        let event = tokio::select! {
+            _ = tokio::signal::ctrl_c() => break,
+            e = rx.recv() => e,
+        };
+        match event {
+            None => break,
+            Some(speech::Event::Ready) => eprintln!("Listening. Press Ctrl+C to stop."),
+            Some(speech::Event::Failed(e)) => return Err(e.into()),
+            Some(speech::Event::Utterance(text)) => {
+                let req = TranslateRequest {
+                    text: text.clone(),
+                    source: from.clone(),
+                    target: target.clone(),
+                    formality: Formality::default(),
+                    glossary: None,
+                };
+                println!("{text}");
+                match translator.translate(&req).await {
+                    Ok(t) => println!("  -> {}\n", t.text.trim()),
+                    Err(e) => eprintln!("{:#}\n", explain(e)),
+                }
+            }
+        }
+    }
     Ok(())
 }
 

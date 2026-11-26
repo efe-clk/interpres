@@ -59,6 +59,19 @@ impl Style {
     }
 }
 
+/// The original text is drawn this much smaller than the translation…
+const ORIGINAL_SCALE: f32 = 0.72;
+/// …and this opaque (of 255), so the translation stands out.
+const ORIGINAL_ALPHA: u8 = 170;
+
+/// One shaped piece of text.
+struct Block {
+    buffer: Buffer,
+    width: f32,
+    height: f32,
+    alpha: u8,
+}
+
 /// Font and glyph caches; creating them scans the system fonts, so keep one.
 pub struct Painter {
     fonts: FontSystem,
@@ -79,11 +92,13 @@ impl Painter {
         }
     }
 
-    /// Renders `text` into a `width`×`height` buffer (physical pixels): a panel that
-    /// hugs the text, aligned by `style.valign`. Empty text gives a fully transparent
-    /// buffer.
+    /// Renders the caption into a `width`×`height` buffer (physical pixels): a panel
+    /// that hugs the text, aligned by `style.valign`. A non-empty `original` is shown
+    /// above `text`, smaller and dimmed (bilingual captions). Empty text gives a fully
+    /// transparent buffer.
     pub fn render(
         &mut self,
+        original: &str,
         text: &str,
         width: u32,
         height: u32,
@@ -96,8 +111,14 @@ impl Painter {
         if !text.trim().is_empty() {
             let (w, h) = (width as f32, height as f32);
             let (pad_x, pad_y) = (14.0 * scale, 8.0 * scale);
-            let (buffer, text_w, text_h) =
-                self.layout(text, w - 2.0 * pad_x, h - 2.0 * pad_y, scale, style);
+            let (blocks, gap, text_w, text_h) = self.layout(
+                original,
+                text,
+                w - 2.0 * pad_x,
+                h - 2.0 * pad_y,
+                scale,
+                style,
+            );
             // The panel wraps the text; the text box is centred horizontally.
             let panel_w = (text_w + 2.0 * pad_x).min(w);
             let panel_h = (text_h + 2.0 * pad_y).min(h);
@@ -110,15 +131,21 @@ impl Painter {
             if style.opacity > 0 {
                 self.panel(&mut pixmap, x0, y0, panel_w, panel_h, scale, style);
             }
-            // The buffer is laid out `w - 2*pad_x` wide with centred lines, so its
+            // Each buffer is laid out `w - 2*pad_x` wide with centred lines, so its
             // origin is at pad_x.
-            self.glyphs_into(
-                &mut pixmap,
-                buffer,
-                pad_x as i32,
-                (y0 + pad_y) as i32,
-                style,
-            );
+            let mut top = y0 + pad_y;
+            for block in blocks {
+                let block_h = block.height;
+                self.glyphs_into(
+                    &mut pixmap,
+                    block.buffer,
+                    pad_x as i32,
+                    top as i32,
+                    block.alpha,
+                    style,
+                );
+                top += block_h + gap;
+            }
         }
         // tiny-skia stores premultiplied RGBA; Wayland wants BGRA.
         let mut out = pixmap.take();
@@ -128,35 +155,52 @@ impl Painter {
         out
     }
 
-    /// Shapes `text` into lines `max_w` wide. A fixed size is used as is; otherwise
-    /// the size starts from one that suits the box and shrinks until it fits
-    /// `max_h`. Returns the buffer and the width and height the text really takes.
+    /// Shapes the original (if any) and the translation into lines `max_w` wide. A
+    /// fixed size is used as is; otherwise the size starts from one that suits the
+    /// box and shrinks until both fit `max_h`. Returns the blocks, the gap between
+    /// them, and the width and height the text really takes.
     fn layout(
         &mut self,
+        original: &str,
         text: &str,
         max_w: f32,
         max_h: f32,
         scale: f32,
         style: &Style,
-    ) -> (Buffer, f32, f32) {
+    ) -> (Vec<Block>, f32, f32, f32) {
         let fixed = style.font_size.map(|s| s * scale);
         let mut size = fixed.unwrap_or_else(|| (max_h / 1.6).clamp(14.0 * scale, 34.0 * scale));
-        let mut buffer = Buffer::new(&mut self.fonts, Metrics::new(size, size * 1.25));
-        let attrs = Attrs::new().family(Family::SansSerif);
-        let (mut text_w, mut text_h) = (0.0, 0.0);
-        for _ in 0..10 {
-            buffer.set_metrics(Metrics::new(size, size * 1.25));
-            buffer.set_size(Some(max_w.max(1.0)), None);
-            buffer.set_text(text, &attrs, Shaping::Advanced, Some(Align::Center));
-            buffer.shape_until_scroll(&mut self.fonts, false);
-            text_w = buffer.layout_runs().map(|r| r.line_w).fold(0.0, f32::max);
-            text_h = buffer.layout_runs().map(|r| r.line_height).sum::<f32>();
+        let gap = 4.0 * scale;
+        loop {
+            let mut blocks = Vec::new();
+            if !original.trim().is_empty() {
+                blocks.push(self.shape(original, size * ORIGINAL_SCALE, max_w, ORIGINAL_ALPHA));
+            }
+            blocks.push(self.shape(text, size, max_w, 255));
+            let text_w = blocks.iter().map(|b| b.width).fold(0.0, f32::max);
+            let text_h =
+                blocks.iter().map(|b| b.height).sum::<f32>() + gap * (blocks.len() - 1) as f32;
             if fixed.is_some() || text_h <= max_h || size <= 10.0 * scale {
-                break;
+                return (blocks, gap, text_w, text_h);
             }
             size *= 0.88;
         }
-        (buffer, text_w, text_h)
+    }
+
+    fn shape(&mut self, text: &str, size: f32, max_w: f32, alpha: u8) -> Block {
+        let mut buffer = Buffer::new(&mut self.fonts, Metrics::new(size, size * 1.25));
+        let attrs = Attrs::new().family(Family::SansSerif);
+        buffer.set_size(Some(max_w.max(1.0)), None);
+        buffer.set_text(text, &attrs, Shaping::Advanced, Some(Align::Center));
+        buffer.shape_until_scroll(&mut self.fonts, false);
+        let width = buffer.layout_runs().map(|r| r.line_w).fold(0.0, f32::max);
+        let height = buffer.layout_runs().map(|r| r.line_height).sum::<f32>();
+        Block {
+            buffer,
+            width,
+            height,
+            alpha,
+        }
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -204,6 +248,7 @@ impl Painter {
         mut buffer: Buffer,
         left: i32,
         top: i32,
+        opacity: u8,
         style: &Style,
     ) {
         let (pw, ph) = (pixmap.width() as i32, pixmap.height() as i32);
@@ -214,7 +259,7 @@ impl Painter {
             &mut self.glyphs,
             Color::rgb(255, 255, 255),
             |x, y, gw, gh, color| {
-                let alpha = color.a() as u32;
+                let alpha = color.a() as u32 * opacity as u32 / 255;
                 if alpha == 0 {
                     return;
                 }
@@ -247,7 +292,7 @@ mod tests {
     #[test]
     fn empty_text_is_transparent() {
         let mut p = Painter::new();
-        let buf = p.render("  ", 200, 60, 1.0, &Style::default());
+        let buf = p.render("", "  ", 200, 60, 1.0, &Style::default());
         assert_eq!(buf.len(), 200 * 60 * 4);
         assert!(buf.iter().all(|&b| b == 0));
     }
@@ -255,7 +300,7 @@ mod tests {
     #[test]
     fn text_draws_a_panel_and_light_glyph_pixels() {
         let mut p = Painter::new();
-        let buf = p.render("The door is locked.", 400, 80, 1.0, &Style::default());
+        let buf = p.render("", "The door is locked.", 400, 80, 1.0, &Style::default());
         // The middle of the panel is opaque-ish…
         let centre = ((40 * 400 + 200) * 4) as usize;
         assert!(buf[centre + 3] > 150, "panel alpha");
@@ -278,7 +323,7 @@ mod tests {
             opacity: 100,
             valign: VAlign::Center,
         };
-        let buf = p.render("Hello", 300, 60, 1.0, &light);
+        let buf = p.render("", "Hello", 300, 60, 1.0, &light);
         let dark_glyphs = buf
             .as_chunks::<4>()
             .0
@@ -291,7 +336,7 @@ mod tests {
             opacity: 0,
             ..Style::default()
         };
-        let buf = p.render("Hello", 300, 60, 1.0, &bare);
+        let buf = p.render("", "Hello", 300, 60, 1.0, &bare);
         // Corner (no glyph there) stays fully transparent.
         assert_eq!(&buf[0..4], &[0, 0, 0, 0]);
     }
@@ -303,7 +348,7 @@ mod tests {
             valign: VAlign::Top,
             ..Style::default()
         };
-        let buf = p.render("Hi", 600, 160, 1.0, &top);
+        let buf = p.render("", "Hi", 600, 160, 1.0, &top);
         let alpha = |x: u32, y: u32| buf[((y * 600 + x) * 4 + 3) as usize];
         // Far left/right and the bottom stay empty: the panel only wraps "Hi"…
         assert_eq!(alpha(20, 20), 0);
@@ -311,6 +356,47 @@ mod tests {
         assert_eq!(alpha(300, 150), 0);
         // …and sits at the top, centred.
         assert!(alpha(300, 6) > 150);
+    }
+
+    #[test]
+    fn original_goes_above_the_translation_and_is_dimmer() {
+        let mut p = Painter::new();
+        let style = Style {
+            font_size: Some(24.0),
+            opacity: 0,
+            ..Style::default()
+        };
+        let one = p.render("", "The door is locked.", 600, 200, 1.0, &style);
+        let two = p.render(
+            "Kapı kilitli.",
+            "The door is locked.",
+            600,
+            200,
+            1.0,
+            &style,
+        );
+        // Rows that hold glyph pixels, and their brightest alpha.
+        let rows = |buf: &[u8]| -> Vec<(u32, u8)> {
+            (0..200)
+                .filter_map(|y| {
+                    let a = (0..600)
+                        .map(|x| buf[((y * 600 + x) * 4 + 3) as usize])
+                        .max()
+                        .unwrap_or(0);
+                    (a > 0).then_some((y, a))
+                })
+                .collect()
+        };
+        let (r1, r2) = (rows(&one), rows(&two));
+        // The bilingual caption is taller: the original adds a line.
+        assert!(r2.len() > r1.len() + 10, "{} vs {}", r2.len(), r1.len());
+        // Its top line (the original) is dimmer than its bottom line (the translation).
+        let top = r2[..r2.len() / 4].iter().map(|r| r.1).max().unwrap();
+        let bottom = r2[r2.len() * 3 / 4..].iter().map(|r| r.1).max().unwrap();
+        assert!(
+            top <= ORIGINAL_ALPHA && bottom > ORIGINAL_ALPHA,
+            "{top} {bottom}"
+        );
     }
 
     #[test]

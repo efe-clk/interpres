@@ -2798,6 +2798,7 @@ dependencies = [
  "interpres-daemon",
  "interpres-engine-claude",
  "interpres-engine-deepl",
+ "interpres-speech",
  "tokio",
  "tokio-util",
  "tracing-subscriber",

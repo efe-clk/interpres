@@ -395,7 +395,7 @@ fn run(
             Ok(Some(frame)) => {
                 #[cfg(target_os = "linux")]
                 if let Sink::Layer(c) = &sink {
-                    c.set_text(frame.translation.clone());
+                    c.set_text("", frame.translation.clone());
                 }
                 let _ = app.emit(
                     FRAME_EVENT,

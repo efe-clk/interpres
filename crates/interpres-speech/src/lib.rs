@@ -5,11 +5,13 @@
 
 pub mod capture;
 pub mod filter;
+pub mod listen;
 pub mod models;
 pub mod recognize;
 pub mod vad;
 
 pub use capture::{Capture, Source};
+pub use listen::{Event, ListenConfig, Listener, default_model, listen, whisper_language};
 pub use models::WhisperModel;
 pub use recognize::Recognizer;
 pub use vad::{Segmenter, Vad};

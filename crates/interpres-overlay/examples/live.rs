@@ -75,7 +75,7 @@ mod linux {
                     frame.source.replace('\n', " / "),
                     frame.translation
                 );
-                caption.set_text(frame.translation);
+                caption.set_text(frame.source.replace('\n', " "), frame.translation);
             }
             tokio::time::sleep(Duration::from_millis(300)).await;
         }

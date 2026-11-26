@@ -423,7 +423,8 @@ smithay_client_toolkit::delegate_dispatch2!(Picker);
 // ---------------------------------------------------------------- caption overlay
 
 enum Msg {
-    Text(String),
+    /// Original and translation.
+    Text(String, String),
     Stop,
 }
 
@@ -454,8 +455,9 @@ impl WaylandCaption {
         })
     }
 
-    pub fn set_text(&self, text: impl Into<String>) {
-        let _ = self.tx.send(Msg::Text(text.into()));
+    /// Shows `text`; a non-empty `original` goes above it (bilingual caption).
+    pub fn set_text(&self, original: impl Into<String>, text: impl Into<String>) {
+        let _ = self.tx.send(Msg::Text(original.into(), text.into()));
     }
 }
 
@@ -490,6 +492,7 @@ fn run_caption(
         layer: None,
         region,
         scale: 1,
+        original: String::new(),
         text: String::new(),
         painter: Painter::new(),
         style,
@@ -553,7 +556,8 @@ fn run_caption(
     event_loop
         .handle()
         .insert_source(rx, |event, _, state| match event {
-            channel::Event::Msg(Msg::Text(text)) => {
+            channel::Event::Msg(Msg::Text(original, text)) => {
+                state.original = original;
                 state.text = text;
                 state.draw();
             }
@@ -577,6 +581,7 @@ struct Caption {
     layer: Option<LayerSurface>,
     region: Region,
     scale: i32,
+    original: String,
     text: String,
     painter: Painter,
     style: Style,
@@ -594,9 +599,9 @@ impl Caption {
         }
         let scale = self.scale.max(1) as u32;
         let (w, h) = (self.region.width * scale, self.region.height * scale);
-        let pixels = self
-            .painter
-            .render(&self.text, w, h, scale as f32, &self.style);
+        let pixels =
+            self.painter
+                .render(&self.original, &self.text, w, h, scale as f32, &self.style);
         let Ok((buffer, canvas)) =
             self.pool
                 .create_buffer(w as i32, h as i32, w as i32 * 4, wl_shm::Format::Argb8888)

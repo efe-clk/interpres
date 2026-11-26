@@ -21,4 +21,5 @@ tracing-subscriber.workspace = true
 interpres-core.workspace = true
 interpres-daemon.workspace = true
 interpres-engine-deepl.workspace = true
+interpres-speech.workspace = true
 interpres-engine-claude = { workspace = true, optional = true }

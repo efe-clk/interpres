@@ -67,12 +67,39 @@ pub fn caption_area(region: Region, screen: Region, placement: Placement) -> Reg
     }
 }
 
+/// The caption area for speech, which has no captured region: centred near the
+/// bottom of `screen`, where film subtitles go.
+pub fn bottom_area(screen: Region) -> Region {
+    let width = (screen.width * 4 / 5).min(1400);
+    let height = 200u32.min(screen.height / 3);
+    Region {
+        x: screen.x + (screen.width - width) as i32 / 2,
+        y: screen.bottom() - height as i32 - (screen.height / 12) as i32,
+        width,
+        height,
+    }
+}
+
 pub use capture::{Capture, CaptureError, default_capture};
 pub use pipeline::{Frame, Pipeline, Recognizer};
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bottom_area_is_centred_near_the_bottom() {
+        let screen = Region {
+            x: 1920,
+            y: 0,
+            width: 2560,
+            height: 1440,
+        };
+        let a = bottom_area(screen);
+        assert_eq!((a.width, a.height), (1400, 200));
+        assert_eq!(a.x, 1920 + (2560 - 1400) / 2);
+        assert_eq!(a.y + a.height as i32, 1440 - 120);
+    }
 
     const SCREEN: Region = Region {
         x: 0,

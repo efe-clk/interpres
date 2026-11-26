@@ -11,6 +11,8 @@ use crate::SpeechError;
 
 /// Name of the first GPU whisper.cpp can use, if any.
 pub fn gpu_name() -> Option<String> {
+    // whisper.cpp and ggml log to stderr; route that into `tracing` first.
+    whisper_rs::install_logging_hooks();
     whisper_rs::vulkan::list_devices()
         .into_iter()
         .next()
@@ -29,7 +31,6 @@ impl Recognizer {
         if !model.exists() {
             return Err(SpeechError::NotInstalled);
         }
-        // whisper.cpp logs to stderr; route it into `tracing` instead.
         whisper_rs::install_logging_hooks();
         let path = model
             .to_str()

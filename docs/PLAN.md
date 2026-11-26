@@ -218,9 +218,15 @@ Adımlar:
    Doğrulandı: FLEURS testleri (turbo %0/%17, small %29/%42), canlı sistem sesi denemesi
    (3 cümle, her biri ~0,5 sn'de). Mikrofon canlı denenmedi. Boşta model bırakma ve
    sözlüğün ipucu olarak bağlanması 3. adımda (hattın yaşam döngüsü orada).
-3. Hat: konuşma parçası → `Translator` (önbellek, sözlük) → çift dilli altyazı. Altyazı
-   bölge yerine ekranın altına yerleşir (yeni yerleşim). CLI: `interpres listen --to tr [--mic]`.
-   → Doğrulama: CLI ile video sesinden canlı çeviri; konuşma sonu → altyazı < 2 sn.
+3. [x] Hat (2026-11-26): `interpres_speech::listen` yakalama → VAD → Whisper → süzgeç
+   zincirini tek iş parçacığında çalıştırır; model dinleme başlayınca yüklenir, durunca
+   bırakılır (bekleme sayacı yerine; ısıtma ~0,5 sn). Çift dilli altyazı: çizici orijinali
+   üstte küçük ve soluk çizer; `bottom_area` ekranın altında yer verir. CLI:
+   `interpres listen --to TR [--from JA] [--mic] [--model small|turbo]`; modeller eksikse
+   indirir, kaynak dil verilince sözlük terimleri Whisper'a ipucu olur.
+   Doğrulandı: testler; canlı sistem sesinde yakalama → tanıma → DeepL çevirisi çalıştı.
+   Canlı denemede kullanıcının o an çalan sesi de yakalandı; sistem sesi denemeleri
+   kullanıcı başındayken yapılmaz. Mikrofon denenmedi.
 4. Arayüz: "Oyun" ekranında kaynak seçimi "Ekran (OCR)" / "Ses"; Ayarlar'da ses kaynağı,
    konuşma dili (sabit; otomatik isteğe bağlı), model, ekran kartı durumu, indirme durumu,
    "orijinali göster". Kısayol bu adımda sorulur.
